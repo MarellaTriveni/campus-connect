@@ -10,12 +10,14 @@ import { Ionicons } from "@expo/vector-icons";
 
 export default function HomeScreen({ navigation }) {
   return (
-    <ScrollView style={styles.container}>
-      
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.smallText}>Welcome back </Text>
+          <Text style={styles.smallText}>Good Morning </Text>
           <Text style={styles.title}>Campus Connect</Text>
         </View>
 
@@ -23,123 +25,197 @@ export default function HomeScreen({ navigation }) {
           style={styles.profileButton}
           onPress={() => navigation.navigate("Profile")}
         >
-          <Ionicons name="person-outline" size={24} color="#4B3F72" />
+          <Ionicons
+            name="person-outline"
+            size={24}
+            color="#4B3F72"
+          />
         </TouchableOpacity>
       </View>
 
       {/* Welcome Card */}
       <View style={styles.welcomeCard}>
-        <Ionicons name="school-outline" size={40} color="#FFFFFF" />
+        <View style={styles.welcomeIcon}>
+          <Ionicons
+            name="school-outline"
+            size={38}
+            color="#FFFFFF"
+          />
+        </View>
 
-        <View style={styles.welcomeText}>
+        <View style={styles.welcomeContent}>
           <Text style={styles.welcomeTitle}>
-            Stay Connected!
+            Welcome to Campus Connect!
           </Text>
 
           <Text style={styles.welcomeDescription}>
-            Check the latest college updates, events and notices.
+            Stay updated with your college notices, events and
+            important campus information.
           </Text>
         </View>
       </View>
 
-      {/* Section Title */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Quick Access</Text>
+      {/* Campus Highlights */}
+      <Text style={styles.sectionTitle}>
+        Campus Highlights
+      </Text>
+
+      <View style={styles.highlightContainer}>
+
+        {/* Notices */}
+        <TouchableOpacity
+          style={styles.highlightCard}
+          onPress={() => navigation.navigate("Notice")}
+        >
+          <View style={styles.highlightIcon}>
+            <Ionicons
+              name="notifications-outline"
+              size={28}
+              color="#4B3F72"
+            />
+          </View>
+
+          <Text style={styles.highlightNumber}>4</Text>
+          <Text style={styles.highlightText}>Notices</Text>
+        </TouchableOpacity>
+
+        {/* Events */}
+        <TouchableOpacity
+          style={styles.highlightCard}
+        >
+          <View style={styles.highlightIcon}>
+            <Ionicons
+              name="calendar-outline"
+              size={28}
+              color="#4B3F72"
+            />
+          </View>
+
+          <Text style={styles.highlightNumber}>2</Text>
+          <Text style={styles.highlightText}>Events</Text>
+        </TouchableOpacity>
+
+        {/* Students */}
+        <TouchableOpacity
+          style={styles.highlightCard}
+        >
+          <View style={styles.highlightIcon}>
+            <Ionicons
+              name="people-outline"
+              size={28}
+              color="#4B3F72"
+            />
+          </View>
+
+          <Text style={styles.highlightNumber}>120+</Text>
+          <Text style={styles.highlightText}>Students</Text>
+        </TouchableOpacity>
+
+        {/* Updates */}
+        <TouchableOpacity
+          style={styles.highlightCard}
+        >
+          <View style={styles.highlightIcon}>
+            <Ionicons
+              name="sparkles-outline"
+              size={28}
+              color="#4B3F72"
+            />
+          </View>
+
+          <Text style={styles.highlightNumber}>New</Text>
+          <Text style={styles.highlightText}>Updates</Text>
+        </TouchableOpacity>
+
       </View>
 
       {/* Quick Access */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>
+          Quick Access
+        </Text>
+      </View>
+
       <View style={styles.quickContainer}>
 
-        <TouchableOpacity style={styles.quickCard}>
-          <Ionicons name="notifications-outline" size={30} color="#4B3F72" />
-          <Text style={styles.quickText}>Notices</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.quickCard}>
-          <Ionicons name="calendar-outline" size={30} color="#4B3F72" />
-          <Text style={styles.quickText}>Events</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.quickCard}>
-          <Ionicons name="person-outline" size={30} color="#4B3F72" />
-          <Text style={styles.quickText}>Profile</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.quickCard}>
-          <Ionicons name="information-circle-outline" size={30} color="#4B3F72" />
-          <Text style={styles.quickText}>About</Text>
-        </TouchableOpacity>
-
-      </View>
-
-      {/* Latest Notices */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Latest Notices</Text>
-
         <TouchableOpacity
+          style={styles.quickCard}
           onPress={() => navigation.navigate("Notice")}
         >
-          <Text style={styles.viewAll}>View All</Text>
+          <Ionicons
+            name="megaphone-outline"
+            size={30}
+            color="#4B3F72"
+          />
+
+          <Text style={styles.quickText}>
+            Notices
+          </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.quickCard}>
+          <Ionicons
+            name="calendar-outline"
+            size={30}
+            color="#4B3F72"
+          />
+
+          <Text style={styles.quickText}>
+            Events
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.quickCard}
+          onPress={() => navigation.navigate("Profile")}
+        >
+          <Ionicons
+            name="person-outline"
+            size={30}
+            color="#4B3F72"
+          />
+
+          <Text style={styles.quickText}>
+            Profile
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.quickCard}>
+          <Ionicons
+            name="information-circle-outline"
+            size={30}
+            color="#4B3F72"
+          />
+
+          <Text style={styles.quickText}>
+            About
+          </Text>
+        </TouchableOpacity>
+
       </View>
 
-      <View style={styles.noticeCard}>
-        <Ionicons name="megaphone-outline" size={28} color="#4B3F72" />
+      {/* Today's Update */}
+      <Text style={styles.sectionTitle}>
+        Today's Update
+      </Text>
 
-        <View style={styles.noticeContent}>
-          <Text style={styles.noticeTitle}>
-            React Native Workshop
-          </Text>
-
-          <Text style={styles.noticeDate}>
-            August 10, 2026
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.noticeCard}>
-        <Ionicons name="code-slash-outline" size={28} color="#4B3F72" />
-
-        <View style={styles.noticeContent}>
-          <Text style={styles.noticeTitle}>
-            Hackathon Registration
-          </Text>
-
-          <Text style={styles.noticeDate}>
-            Registration is now open
-          </Text>
-        </View>
-      </View>
-
-      {/* Upcoming Events */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Upcoming Events</Text>
-      </View>
-
-      <View style={styles.eventCard}>
-        <View style={styles.dateBox}>
-          <Text style={styles.dateNumber}>15</Text>
-          <Text style={styles.dateMonth}>AUG</Text>
+      <View style={styles.updateCard}>
+        <View style={styles.updateIcon}>
+          <Ionicons
+            name="information-circle-outline"
+            size={28}
+            color="#4B3F72"
+          />
         </View>
 
-        <View>
-          <Text style={styles.eventTitle}>Technical Fest</Text>
-          <Text style={styles.eventDescription}>
-            College Auditorium
+        <View style={styles.updateContent}>
+          <Text style={styles.updateTitle}>
+            Stay Updated
           </Text>
-        </View>
-      </View>
 
-      <View style={styles.eventCard}>
-        <View style={styles.dateBox}>
-          <Text style={styles.dateNumber}>20</Text>
-          <Text style={styles.dateMonth}>AUG</Text>
-        </View>
-
-        <View>
-          <Text style={styles.eventTitle}>Coding Contest</Text>
-          <Text style={styles.eventDescription}>
-            Computer Lab
+          <Text style={styles.updateText}>
+            Check the latest notices and upcoming events
+            regularly.
           </Text>
         </View>
       </View>
@@ -192,41 +268,82 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
 
-  welcomeText: {
+  welcomeIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    backgroundColor: "#8172AD",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  welcomeContent: {
     flex: 1,
     marginLeft: 15,
   },
 
   welcomeTitle: {
     color: "#FFFFFF",
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
   },
 
   welcomeDescription: {
     color: "#F0EDF8",
     fontSize: 13,
-    marginTop: 5,
+    marginTop: 6,
     lineHeight: 19,
-  },
-
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-    marginTop: 5,
   },
 
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#333",
+    marginBottom: 12,
   },
 
-  viewAll: {
-    color: "#6C5B9B",
-    fontWeight: "600",
+  highlightContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+
+  highlightCard: {
+    width: "48%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 15,
+    marginBottom: 12,
+    alignItems: "center",
+    elevation: 3,
+  },
+
+  highlightIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#E9E4F7",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+
+  highlightNumber: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#4B3F72",
+  },
+
+  highlightText: {
+    fontSize: 13,
+    color: "#777",
+    marginTop: 3,
+  },
+
+  sectionHeader: {
+    marginTop: 5,
+    marginBottom: 12,
   },
 
   quickContainer: {
@@ -253,74 +370,40 @@ const styles = StyleSheet.create({
     color: "#333",
   },
 
-  noticeCard: {
+  updateCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 30,
     elevation: 2,
   },
 
-  noticeContent: {
-    marginLeft: 15,
-    flex: 1,
-  },
-
-  noticeTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-  },
-
-  noticeDate: {
-    fontSize: 13,
-    color: "#777",
-    marginTop: 5,
-  },
-
-  eventCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    elevation: 2,
-  },
-
-  dateBox: {
+  updateIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
     backgroundColor: "#E9E4F7",
-    borderRadius: 12,
-    width: 55,
-    height: 55,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 15,
   },
 
-  dateNumber: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#4B3F72",
+  updateContent: {
+    flex: 1,
+    marginLeft: 14,
   },
 
-  dateMonth: {
-    fontSize: 11,
-    color: "#4B3F72",
-    fontWeight: "bold",
-  },
-
-  eventTitle: {
+  updateTitle: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#333",
   },
 
-  eventDescription: {
+  updateText: {
     fontSize: 13,
     color: "#777",
     marginTop: 5,
+    lineHeight: 18,
   },
 });
