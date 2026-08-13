@@ -61,7 +61,6 @@ export default function HomeScreen({ navigation }) {
       </Text>
 
       <View style={styles.highlightContainer}>
-
         {/* Notices */}
         <TouchableOpacity
           style={styles.highlightCard}
@@ -80,9 +79,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
 
         {/* Events */}
-        <TouchableOpacity
-          style={styles.highlightCard}
-        >
+        <TouchableOpacity style={styles.highlightCard}>
           <View style={styles.highlightIcon}>
             <Ionicons
               name="calendar-outline"
@@ -96,9 +93,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
 
         {/* Students */}
-        <TouchableOpacity
-          style={styles.highlightCard}
-        >
+        <TouchableOpacity style={styles.highlightCard}>
           <View style={styles.highlightIcon}>
             <Ionicons
               name="people-outline"
@@ -112,9 +107,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
 
         {/* Updates */}
-        <TouchableOpacity
-          style={styles.highlightCard}
-        >
+        <TouchableOpacity style={styles.highlightCard}>
           <View style={styles.highlightIcon}>
             <Ionicons
               name="sparkles-outline"
@@ -126,18 +119,14 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.highlightNumber}>New</Text>
           <Text style={styles.highlightText}>Updates</Text>
         </TouchableOpacity>
-
       </View>
 
       {/* Quick Access */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>
-          Quick Access
-        </Text>
-      </View>
+      <Text style={styles.sectionTitle}>
+        Quick Access
+      </Text>
 
       <View style={styles.quickContainer}>
-
         <TouchableOpacity
           style={styles.quickCard}
           onPress={() => navigation.navigate("Notice")}
@@ -147,10 +136,7 @@ export default function HomeScreen({ navigation }) {
             size={30}
             color="#4B3F72"
           />
-
-          <Text style={styles.quickText}>
-            Notices
-          </Text>
+          <Text style={styles.quickText}>Notices</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.quickCard}>
@@ -159,10 +145,7 @@ export default function HomeScreen({ navigation }) {
             size={30}
             color="#4B3F72"
           />
-
-          <Text style={styles.quickText}>
-            Events
-          </Text>
+          <Text style={styles.quickText}>Events</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -174,10 +157,7 @@ export default function HomeScreen({ navigation }) {
             size={30}
             color="#4B3F72"
           />
-
-          <Text style={styles.quickText}>
-            Profile
-          </Text>
+          <Text style={styles.quickText}>Profile</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.quickCard}>
@@ -186,12 +166,8 @@ export default function HomeScreen({ navigation }) {
             size={30}
             color="#4B3F72"
           />
-
-          <Text style={styles.quickText}>
-            About
-          </Text>
+          <Text style={styles.quickText}>About</Text>
         </TouchableOpacity>
-
       </View>
 
       {/* Today's Update */}
@@ -214,12 +190,10 @@ export default function HomeScreen({ navigation }) {
           </Text>
 
           <Text style={styles.updateText}>
-            Check the latest notices and upcoming events
-            regularly.
+            Check the latest notices and upcoming events regularly.
           </Text>
         </View>
       </View>
-
     </ScrollView>
   );
 }
@@ -339,11 +313,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#777",
     marginTop: 3,
-  },
-
-  sectionHeader: {
-    marginTop: 5,
-    marginBottom: 12,
   },
 
   quickContainer: {
