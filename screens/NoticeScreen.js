@@ -11,6 +11,15 @@ import { Ionicons } from "@expo/vector-icons";
 
 export default function NoticeScreen() {
   const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
+  const categories = [
+    "All",
+    "Workshop",
+    "Event",
+    "Placement",
+    "Examination",
+  ];
 
   const notices = [
     {
@@ -47,9 +56,17 @@ export default function NoticeScreen() {
     },
   ];
 
-  const filteredNotices = notices.filter((notice) =>
-    notice.title.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredNotices = notices.filter((notice) => {
+    const matchesSearch = notice.title
+      .toLowerCase()
+      .includes(search.toLowerCase());
+
+    const matchesCategory =
+      selectedCategory === "All" ||
+      notice.category === selectedCategory;
+
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <View style={styles.container}>
@@ -57,8 +74,13 @@ export default function NoticeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.smallTitle}>Campus Updates</Text>
-          <Text style={styles.title}>Notices 📢</Text>
+          <Text style={styles.smallTitle}>
+            Campus Updates
+          </Text>
+
+          <Text style={styles.title}>
+            Notices 📢
+          </Text>
         </View>
 
         <View style={styles.iconCircle}>
@@ -85,10 +107,58 @@ export default function NoticeScreen() {
           value={search}
           onChangeText={setSearch}
         />
+
+        {search.length > 0 && (
+          <TouchableOpacity
+            onPress={() => setSearch("")}
+          >
+            <Ionicons
+              name="close-circle"
+              size={20}
+              color="#999"
+            />
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* Notice Count */}
-      <View style={styles.countRow}>
+      {/* Category Title */}
+      <Text style={styles.filterTitle}>
+        Categories
+      </Text>
+
+      {/* Category Buttons */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoryScroll}
+      >
+        {categories.map((category) => (
+          <TouchableOpacity
+            key={category}
+            style={[
+              styles.categoryButton,
+              selectedCategory === category &&
+                styles.selectedCategory,
+            ]}
+            onPress={() =>
+              setSelectedCategory(category)
+            }
+          >
+            <Text
+              style={[
+                styles.categoryText,
+                selectedCategory === category &&
+                  styles.selectedCategoryText,
+              ]}
+            >
+              {category}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Section Header */}
+      <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>
           Latest Notices
         </Text>
@@ -98,7 +168,7 @@ export default function NoticeScreen() {
         </Text>
       </View>
 
-      {/* Notices */}
+      {/* Notice List */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.list}
@@ -111,7 +181,7 @@ export default function NoticeScreen() {
               activeOpacity={0.8}
             >
 
-              {/* Icon */}
+              {/* Notice Icon */}
               <View style={styles.noticeIcon}>
                 <Ionicons
                   name={notice.icon}
@@ -120,7 +190,7 @@ export default function NoticeScreen() {
                 />
               </View>
 
-              {/* Content */}
+              {/* Notice Content */}
               <View style={styles.noticeContent}>
 
                 <View style={styles.titleRow}>
@@ -172,7 +242,7 @@ export default function NoticeScreen() {
             <Ionicons
               name="search-outline"
               size={50}
-              color="#aaa"
+              color="#AAA"
             />
 
             <Text style={styles.emptyTitle}>
@@ -180,7 +250,7 @@ export default function NoticeScreen() {
             </Text>
 
             <Text style={styles.emptyText}>
-              Try searching with a different keyword.
+              Try another search or category.
             </Text>
           </View>
         )}
@@ -233,7 +303,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 15,
-    marginBottom: 22,
+    marginBottom: 15,
     elevation: 2,
   },
 
@@ -244,7 +314,43 @@ const styles = StyleSheet.create({
     color: "#333",
   },
 
-  countRow: {
+  filterTitle: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#444",
+    marginBottom: 8,
+  },
+
+  categoryScroll: {
+    marginBottom: 18,
+  },
+
+  categoryButton: {
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#E2DDEF",
+  },
+
+  selectedCategory: {
+    backgroundColor: "#6C5B9B",
+    borderColor: "#6C5B9B",
+  },
+
+  categoryText: {
+    fontSize: 13,
+    color: "#666",
+    fontWeight: "600",
+  },
+
+  selectedCategoryText: {
+    color: "#FFFFFF",
+  },
+
+  sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -338,7 +444,7 @@ const styles = StyleSheet.create({
 
   emptyContainer: {
     alignItems: "center",
-    marginTop: 80,
+    marginTop: 70,
   },
 
   emptyTitle: {
