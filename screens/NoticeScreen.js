@@ -79,7 +79,7 @@ export default function NoticeScreen() {
           </Text>
 
           <Text style={styles.title}>
-            Notices 📢
+            Notices 
           </Text>
         </View>
 
