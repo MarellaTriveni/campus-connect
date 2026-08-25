@@ -1,69 +1,101 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  TextInput,
   TouchableOpacity,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-const notices = [
+const initialNotices = [
   {
     id: 1,
     title: "React Native Workshop",
+    description:
+      "Registration is now open for the React Native workshop.",
     category: "Workshop",
     date: "18 Aug 2026",
-    description: "Learn React Native and build mobile applications.",
   },
   {
     id: 2,
     title: "Placement Drive",
+    description:
+      "Placement drive registration is available for eligible students.",
     category: "Placement",
     date: "20 Aug 2026",
-    description: "Campus placement drive for final year students.",
   },
   {
     id: 3,
     title: "Hackathon Registration",
+    description:
+      "Students can register for the upcoming campus hackathon.",
     category: "Event",
     date: "22 Aug 2026",
-    description: "Registration is open for the upcoming college hackathon.",
   },
   {
     id: 4,
-    title: "Semester Examination",
+    title: "Exam Schedule",
+    description:
+      "The examination schedule has been published.",
     category: "Exam",
     date: "25 Aug 2026",
-    description: "Semester examination schedule has been announced.",
   },
   {
     id: 5,
-    title: "Holiday Announcement",
-    category: "General",
+    title: "Technical Seminar",
+    description:
+      "A technical seminar will be conducted in the seminar hall.",
+    category: "Seminar",
     date: "28 Aug 2026",
-    description: "College will remain closed on the announced holiday.",
   },
+];
+
+const categories = [
+  "All",
+  "Workshop",
+  "Placement",
+  "Event",
+  "Exam",
+  "Seminar",
 ];
 
 export default function NoticeScreen() {
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] =
+    useState("All");
 
-  const categories = ["All", "Workshop", "Placement", "Event", "Exam"];
+  const [readNotices, setReadNotices] = useState([]);
 
-  const filteredNotices = notices.filter((notice) => {
-    const matchesSearch =
-      notice.title.toLowerCase().includes(search.toLowerCase()) ||
-      notice.description.toLowerCase().includes(search.toLowerCase());
+  const filteredNotices = useMemo(() => {
+    return initialNotices.filter((notice) => {
+      const text = search.toLowerCase().trim();
 
-    const matchesCategory =
-      selectedCategory === "All" ||
-      notice.category === selectedCategory;
+      const matchesSearch =
+        notice.title.toLowerCase().includes(text) ||
+        notice.description.toLowerCase().includes(text) ||
+        notice.category.toLowerCase().includes(text);
 
-    return matchesSearch && matchesCategory;
-  });
+      const matchesCategory =
+        selectedCategory === "All" ||
+        notice.category === selectedCategory;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [search, selectedCategory]);
+
+  const markAsRead = (id) => {
+    if (!readNotices.includes(id)) {
+      setReadNotices((current) => [
+        ...current,
+        id,
+      ]);
+    }
+  };
+
+  const unreadCount =
+    initialNotices.length - readNotices.length;
 
   return (
     <View style={styles.container}>
@@ -71,17 +103,30 @@ export default function NoticeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>College Notices</Text>
-          <Text style={styles.headerSubtitle}>
-            Latest campus updates
+          <Text style={styles.headerSmall}>
+            Campus Connect
+          </Text>
+
+          <Text style={styles.headerTitle}>
+            Notices
           </Text>
         </View>
 
-        <Ionicons
-          name="notifications-outline"
-          size={30}
-          color="#fff"
-        />
+        <View style={styles.headerIcon}>
+          <Ionicons
+            name="notifications-outline"
+            size={27}
+            color="#6C63FF"
+          />
+
+          {unreadCount > 0 && (
+            <View style={styles.headerBadge}>
+              <Text style={styles.headerBadgeText}>
+                {unreadCount}
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
 
       <ScrollView
@@ -89,11 +134,37 @@ export default function NoticeScreen() {
         contentContainerStyle={styles.content}
       >
 
-        {/* Search Box */}
+        {/* Summary */}
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryIcon}>
+            <Ionicons
+              name="mail-unread-outline"
+              size={30}
+              color="#6C63FF"
+            />
+          </View>
+
+          <View style={styles.summaryContent}>
+            <Text style={styles.summaryTitle}>
+              Notice Updates
+            </Text>
+
+            <Text style={styles.summarySubtitle}>
+              {unreadCount} unread notice
+              {unreadCount !== 1 ? "s" : ""}
+            </Text>
+          </View>
+
+          <Text style={styles.summaryNumber}>
+            {unreadCount}
+          </Text>
+        </View>
+
+        {/* Search */}
         <View style={styles.searchBox}>
           <Ionicons
             name="search-outline"
-            size={22}
+            size={21}
             color="#777"
           />
 
@@ -106,7 +177,9 @@ export default function NoticeScreen() {
           />
 
           {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch("")}>
+            <TouchableOpacity
+              onPress={() => setSearch("")}
+            >
               <Ionicons
                 name="close-circle"
                 size={21}
@@ -130,7 +203,9 @@ export default function NoticeScreen() {
                 selectedCategory === category &&
                   styles.selectedCategory,
               ]}
-              onPress={() => setSelectedCategory(category)}
+              onPress={() =>
+                setSelectedCategory(category)
+              }
             >
               <Text
                 style={[
@@ -145,67 +220,112 @@ export default function NoticeScreen() {
           ))}
         </ScrollView>
 
-        {/* Notice Count */}
-        <Text style={styles.resultText}>
-          {filteredNotices.length} notice
-          {filteredNotices.length !== 1 ? "s" : ""} found
-        </Text>
+        {/* Heading */}
+        <View style={styles.resultRow}>
+          <Text style={styles.sectionTitle}>
+            Latest Notices
+          </Text>
 
-        {/* Notices */}
+          <Text style={styles.resultCount}>
+            {filteredNotices.length} found
+          </Text>
+        </View>
+
+        {/* Notice Cards */}
         {filteredNotices.length > 0 ? (
-          filteredNotices.map((notice) => (
-            <View key={notice.id} style={styles.card}>
+          filteredNotices.map((notice) => {
+            const isRead = readNotices.includes(
+              notice.id
+            );
 
-              <View style={styles.cardTop}>
-                <View style={styles.iconBox}>
+            return (
+              <TouchableOpacity
+                key={notice.id}
+                style={[
+                  styles.noticeCard,
+                  !isRead && styles.unreadCard,
+                ]}
+                activeOpacity={0.8}
+                onPress={() =>
+                  markAsRead(notice.id)
+                }
+              >
+
+                {/* Icon */}
+                <View
+                  style={[
+                    styles.noticeIcon,
+                    isRead &&
+                      styles.readNoticeIcon,
+                  ]}
+                >
                   <Ionicons
-                    name="megaphone-outline"
-                    size={25}
+                    name={
+                      isRead
+                        ? "mail-open-outline"
+                        : "mail-unread-outline"
+                    }
+                    size={27}
                     color="#6C63FF"
                   />
                 </View>
 
-                <View style={styles.titleContainer}>
-                  <Text style={styles.noticeTitle}>
-                    {notice.title}
+                <View style={styles.noticeContent}>
+
+                  <View style={styles.titleRow}>
+                    <Text style={styles.noticeTitle}>
+                      {notice.title}
+                    </Text>
+
+                    {!isRead && (
+                      <View style={styles.unreadDot} />
+                    )}
+                  </View>
+
+                  {/* Category */}
+                  <View style={styles.categoryBadge}>
+                    <Text style={styles.categoryBadgeText}>
+                      {notice.category}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.description}>
+                    {notice.description}
                   </Text>
 
-                  <Text style={styles.date}>
-                    {notice.date}
-                  </Text>
+                  <View style={styles.dateRow}>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={14}
+                      color="#888"
+                    />
+
+                    <Text style={styles.dateText}>
+                      {notice.date}
+                    </Text>
+
+                    <Text style={styles.statusText}>
+                      {isRead ? "Read" : "Unread"}
+                    </Text>
+                  </View>
+
                 </View>
-              </View>
-
-              <View style={styles.categoryBadge}>
-                <Text style={styles.badgeText}>
-                  {notice.category}
-                </Text>
-              </View>
-
-              <Text style={styles.description}>
-                {notice.description}
-              </Text>
-
-              <TouchableOpacity style={styles.viewButton}>
-                <Text style={styles.viewButtonText}>
-                  View Details
-                </Text>
 
                 <Ionicons
-                  name="arrow-forward"
-                  size={17}
-                  color="#6C63FF"
+                  name="chevron-forward-outline"
+                  size={20}
+                  color="#999"
                 />
-              </TouchableOpacity>
 
-            </View>
-          ))
+              </TouchableOpacity>
+            );
+          })
         ) : (
           <View style={styles.emptyContainer}>
             <Ionicons
-              name="document-text-outline"
-              size={60}
-              color="#aaa"
+              name="documents-outline"
+              size={65}
+              color="#AAA"
             />
 
             <Text style={styles.emptyTitle}>
@@ -213,10 +333,14 @@ export default function NoticeScreen() {
             </Text>
 
             <Text style={styles.emptyText}>
-              Try searching with a different keyword.
+              Try another search or category.
             </Text>
           </View>
         )}
+
+        <Text style={styles.footer}>
+          Campus Connect • Notices
+        </Text>
 
       </ScrollView>
     </View>
@@ -239,16 +363,44 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  headerTitle: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "bold",
+  headerSmall: {
+    color: "#E8E7FF",
+    fontSize: 12,
   },
 
-  headerSubtitle: {
-    color: "#E8E7FF",
-    fontSize: 13,
-    marginTop: 4,
+  headerTitle: {
+    color: "#FFFFFF",
+    fontSize: 27,
+    fontWeight: "bold",
+    marginTop: 3,
+  },
+
+  headerIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+
+  headerBadge: {
+    position: "absolute",
+    top: 1,
+    right: 1,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#FF4D4D",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  headerBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "bold",
   },
 
   content: {
@@ -256,11 +408,53 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
 
-  searchBox: {
-    backgroundColor: "#fff",
+  summaryCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 17,
+    padding: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+    elevation: 3,
+  },
+
+  summaryIcon: {
+    width: 50,
     height: 50,
+    borderRadius: 14,
+    backgroundColor: "#EEEDFF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+
+  summaryContent: {
+    flex: 1,
+  },
+
+  summaryTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+
+  summarySubtitle: {
+    fontSize: 12,
+    color: "#888",
+    marginTop: 4,
+  },
+
+  summaryNumber: {
+    fontSize: 27,
+    fontWeight: "bold",
+    color: "#6C63FF",
+  },
+
+  searchBox: {
+    height: 50,
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
-    paddingHorizontal: 15,
+    paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
     elevation: 2,
@@ -268,23 +462,23 @@ const styles = StyleSheet.create({
 
   searchInput: {
     flex: 1,
+    marginLeft: 9,
     fontSize: 15,
-    marginLeft: 10,
     color: "#333",
   },
 
   categoryScroll: {
-    marginTop: 15,
+    marginTop: 14,
   },
 
   categoryButton: {
-    paddingHorizontal: 17,
-    paddingVertical: 9,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: "#fff",
-    marginRight: 8,
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#DDD",
+    marginRight: 8,
   },
 
   selectedCategory: {
@@ -293,98 +487,130 @@ const styles = StyleSheet.create({
   },
 
   categoryText: {
+    fontSize: 12,
     color: "#555",
-    fontSize: 13,
     fontWeight: "500",
   },
 
   selectedCategoryText: {
-    color: "#fff",
+    color: "#FFFFFF",
   },
 
-  resultText: {
-    fontSize: 14,
-    color: "#777",
-    marginTop: 18,
+  resultRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 20,
     marginBottom: 10,
   },
 
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 16,
-    marginBottom: 15,
+  sectionTitle: {
+    fontSize: 19,
+    fontWeight: "bold",
+    color: "#333",
+  },
+
+  resultCount: {
+    fontSize: 12,
+    color: "#888",
+  },
+
+  noticeCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 17,
+    padding: 15,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 14,
     elevation: 3,
   },
 
-  cardTop: {
-    flexDirection: "row",
-    alignItems: "center",
+  unreadCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: "#6C63FF",
   },
 
-  iconBox: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
+  noticeIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
     backgroundColor: "#EEEDFF",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
   },
 
-  titleContainer: {
+  readNoticeIcon: {
+    backgroundColor: "#F1F1F1",
+  },
+
+  noticeContent: {
     flex: 1,
   },
 
-  noticeTitle: {
-    fontSize: 17,
-    fontWeight: "bold",
-    color: "#222",
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 
-  date: {
-    fontSize: 12,
-    color: "#888",
-    marginTop: 4,
+  noticeTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+
+  unreadDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: "#6C63FF",
+    marginLeft: 5,
   },
 
   categoryBadge: {
     alignSelf: "flex-start",
     backgroundColor: "#EEEDFF",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
-    marginTop: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 7,
+    marginTop: 7,
   },
 
-  badgeText: {
+  categoryBadgeText: {
+    fontSize: 10,
     color: "#6C63FF",
-    fontSize: 12,
     fontWeight: "bold",
   },
 
   description: {
-    fontSize: 14,
-    color: "#666",
-    lineHeight: 20,
-    marginTop: 10,
+    fontSize: 12,
+    color: "#777",
+    lineHeight: 18,
+    marginTop: 7,
   },
 
-  viewButton: {
-    marginTop: 12,
+  dateRow: {
     flexDirection: "row",
     alignItems: "center",
+    marginTop: 8,
   },
 
-  viewButtonText: {
+  dateText: {
+    fontSize: 11,
+    color: "#888",
+    marginLeft: 5,
+  },
+
+  statusText: {
+    fontSize: 10,
     color: "#6C63FF",
     fontWeight: "bold",
-    marginRight: 5,
+    marginLeft: "auto",
   },
 
   emptyContainer: {
     alignItems: "center",
-    justifyContent: "center",
     paddingVertical: 70,
   },
 
@@ -396,7 +622,15 @@ const styles = StyleSheet.create({
   },
 
   emptyText: {
+    fontSize: 13,
     color: "#888",
     marginTop: 5,
+  },
+
+  footer: {
+    textAlign: "center",
+    color: "#999",
+    fontSize: 12,
+    marginTop: 15,
   },
 });
