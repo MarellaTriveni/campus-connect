@@ -4,14 +4,23 @@ import StudentRegistration from "../screens/StudentRegistration";
 import LoginScreen from "../screens/LoginScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import BottomTabs from "./BottomTabs";
+import SettingsScreen from "../screens/SettingsScreen";
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   return (
     <Stack.Navigator>
       <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+      />
+      <Stack.Screen
         name="StudentRegistration"
         component={StudentRegistration}
+      />
+      <Stack.Screen
+        name="Home"
+        component={HomeScreen}
       />
       <Stack.Screen
         name="Logout"
@@ -26,6 +35,7 @@ export default function AppNavigator() {
       name="Login" 
       component={LoginScreen}
      />
+     
     </Stack.Navigator>
     
   );

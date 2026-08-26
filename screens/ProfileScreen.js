@@ -1,42 +1,22 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function ProfileScreen({ navigation }) {
-  const [isEditing, setIsEditing] = useState(false);
-
-  const [name, setName] = useState("Triveni Marella");
-  const [rollNo, setRollNo] = useState("25NN5A0512");
-  const [email, setEmail] = useState("student@example.com");
-  const [phone, setPhone] = useState("9876543210");
-  const [department, setDepartment] = useState(
-    "Computer Science Engineering"
-  );
-
-  // Save profile
-  const handleSave = () => {
-    setIsEditing(false);
-
+  const handleEditProfile = () => {
     Alert.alert(
-      "Profile Updated",
-      "Your profile has been updated successfully!"
+      "Edit Profile",
+      "Profile editing feature will be available soon."
     );
   };
 
-  // Cancel editing
-  const handleCancel = () => {
-    setIsEditing(false);
-  };
-
-  // Logout
   const handleLogout = () => {
     Alert.alert(
       "Logout",
@@ -48,10 +28,12 @@ export default function ProfileScreen({ navigation }) {
         },
         {
           text: "Logout",
+          style: "destructive",
           onPress: () => {
-            if (navigation) {
-              navigation.navigate("Login");
-            }
+            Alert.alert(
+              "Logged Out",
+              "You have been logged out successfully."
+            );
           },
         },
       ]
@@ -59,16 +41,13 @@ export default function ProfileScreen({ navigation }) {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* ================= HEADER ================= */}
+    <View style={styles.container}>
 
+      {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerSmallText}>
-            Account
+          <Text style={styles.headerSmall}>
+            Campus Connect
           </Text>
 
           <Text style={styles.headerTitle}>
@@ -85,395 +64,393 @@ export default function ProfileScreen({ navigation }) {
         </View>
       </View>
 
-      {/* ================= PROFILE CARD ================= */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
 
-      <View style={styles.profileCard}>
+        {/* Profile Card */}
+        <View style={styles.profileCard}>
 
-        <View style={styles.avatarContainer}>
-          <Ionicons
-            name="person"
-            size={58}
-            color="#6C63FF"
-          />
+          {/* Profile Circle */}
+          <View style={styles.profileImage}>
+            <Ionicons
+              name="person"
+              size={55}
+              color="#6C63FF"
+            />
+          </View>
 
-          {/* Online Dot */}
-          <View style={styles.onlineDot} />
-        </View>
+          <Text style={styles.profileName}>
+            Triveni
+          </Text>
 
-        <Text style={styles.profileName}>
-          {name}
-        </Text>
+          <Text style={styles.profileRole}>
+            Computer Science Engineering
+          </Text>
 
-        <Text style={styles.profileRole}>
-          B.Tech • CSE Student
-        </Text>
-
-        <View style={styles.studentBadge}>
-          <Ionicons
-            name="school-outline"
-            size={15}
-            color="#6C63FF"
-          />
-
-          <Text style={styles.studentBadgeText}>
+          <Text style={styles.profileCollege}>
             Student
           </Text>
-        </View>
 
-      </View>
-
-      {/* ================= PERSONAL INFORMATION ================= */}
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>
-          Personal Information
-        </Text>
-
-        {!isEditing && (
+          {/* Edit Button */}
           <TouchableOpacity
-            style={styles.smallEditButton}
-            onPress={() => setIsEditing(true)}
+            style={styles.editButton}
+            onPress={handleEditProfile}
           >
             <Ionicons
               name="create-outline"
               size={18}
-              color="#6C63FF"
-            />
-
-            <Text style={styles.smallEditText}>
-              Edit
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <View style={styles.infoCard}>
-
-        {/* Name */}
-        <View style={styles.infoRow}>
-          <View style={styles.infoIcon}>
-            <Ionicons
-              name="person-outline"
-              size={22}
-              color="#6C63FF"
-            />
-          </View>
-
-          <View style={styles.infoContent}>
-            <Text style={styles.label}>
-              Full Name
-            </Text>
-
-            {isEditing ? (
-              <TextInput
-                style={styles.input}
-                value={name}
-                onChangeText={setName}
-                placeholder="Enter name"
-              />
-            ) : (
-              <Text style={styles.value}>
-                {name}
-              </Text>
-            )}
-          </View>
-        </View>
-
-        {/* Roll Number */}
-        <View style={styles.infoRow}>
-          <View style={styles.infoIcon}>
-            <Ionicons
-              name="id-card-outline"
-              size={22}
-              color="#6C63FF"
-            />
-          </View>
-
-          <View style={styles.infoContent}>
-            <Text style={styles.label}>
-              Roll Number
-            </Text>
-
-            {isEditing ? (
-              <TextInput
-                style={styles.input}
-                value={rollNo}
-                onChangeText={setRollNo}
-                placeholder="Enter roll number"
-              />
-            ) : (
-              <Text style={styles.value}>
-                {rollNo}
-              </Text>
-            )}
-          </View>
-        </View>
-
-        {/* Department */}
-        <View style={styles.infoRow}>
-          <View style={styles.infoIcon}>
-            <Ionicons
-              name="school-outline"
-              size={22}
-              color="#6C63FF"
-            />
-          </View>
-
-          <View style={styles.infoContent}>
-            <Text style={styles.label}>
-              Department
-            </Text>
-
-            {isEditing ? (
-              <TextInput
-                style={styles.input}
-                value={department}
-                onChangeText={setDepartment}
-                placeholder="Enter department"
-              />
-            ) : (
-              <Text style={styles.value}>
-                {department}
-              </Text>
-            )}
-          </View>
-        </View>
-
-        {/* Email */}
-        <View style={styles.infoRow}>
-          <View style={styles.infoIcon}>
-            <Ionicons
-              name="mail-outline"
-              size={22}
-              color="#6C63FF"
-            />
-          </View>
-
-          <View style={styles.infoContent}>
-            <Text style={styles.label}>
-              Email
-            </Text>
-
-            {isEditing ? (
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                placeholder="Enter email"
-              />
-            ) : (
-              <Text style={styles.value}>
-                {email}
-              </Text>
-            )}
-          </View>
-        </View>
-
-        {/* Phone */}
-        <View style={styles.infoRow}>
-          <View style={styles.infoIcon}>
-            <Ionicons
-              name="call-outline"
-              size={22}
-              color="#6C63FF"
-            />
-          </View>
-
-          <View style={styles.infoContent}>
-            <Text style={styles.label}>
-              Phone Number
-            </Text>
-
-            {isEditing ? (
-              <TextInput
-                style={styles.input}
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                placeholder="Enter phone"
-              />
-            ) : (
-              <Text style={styles.value}>
-                {phone}
-              </Text>
-            )}
-          </View>
-        </View>
-
-      </View>
-
-      {/* ================= SAVE / CANCEL ================= */}
-
-      {isEditing && (
-        <View style={styles.editActions}>
-
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={handleCancel}
-          >
-            <Text style={styles.cancelText}>
-              Cancel
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.saveButton}
-            onPress={handleSave}
-          >
-            <Ionicons
-              name="checkmark-circle-outline"
-              size={21}
               color="#FFFFFF"
             />
 
-            <Text style={styles.saveText}>
-              Save Changes
+            <Text style={styles.editButtonText}>
+              Edit Profile
             </Text>
           </TouchableOpacity>
 
         </View>
-      )}
 
-      {/* ================= ACCOUNT OPTIONS ================= */}
+        {/* Student Information */}
+        <Text style={styles.sectionTitle}>
+          Student Information
+        </Text>
 
-      {!isEditing && (
-        <>
-          <Text style={styles.sectionTitle}>
-            Account Settings
-          </Text>
+        <View style={styles.infoCard}>
 
-          <View style={styles.optionsCard}>
-
-            {/* Notifications */}
-            <TouchableOpacity
-              style={styles.optionRow}
-              onPress={() =>
-                Alert.alert(
-                  "Notifications",
-                  "Notification settings coming soon!"
-                )
-              }
-            >
-              <View style={styles.optionIcon}>
-                <Ionicons
-                  name="notifications-outline"
-                  size={22}
-                  color="#6C63FF"
-                />
-              </View>
-
-              <View style={styles.optionContent}>
-                <Text style={styles.optionTitle}>
-                  Notifications
-                </Text>
-
-                <Text style={styles.optionSubtitle}>
-                  Manage your notifications
-                </Text>
-              </View>
-
+          {/* Name */}
+          <View style={styles.infoRow}>
+            <View style={styles.infoIcon}>
               <Ionicons
-                name="chevron-forward-outline"
-                size={20}
-                color="#999"
+                name="person-outline"
+                size={21}
+                color="#6C63FF"
               />
-            </TouchableOpacity>
+            </View>
 
-            {/* Help */}
-            <TouchableOpacity
-              style={styles.optionRow}
-              onPress={() =>
-                Alert.alert(
-                  "Help & Support",
-                  "Help and support feature coming soon!"
-                )
-              }
-            >
-              <View style={styles.optionIcon}>
-                <Ionicons
-                  name="help-circle-outline"
-                  size={22}
-                  color="#6C63FF"
-                />
-              </View>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>
+                Full Name
+              </Text>
 
-              <View style={styles.optionContent}>
-                <Text style={styles.optionTitle}>
-                  Help & Support
-                </Text>
-
-                <Text style={styles.optionSubtitle}>
-                  Get help with the application
-                </Text>
-              </View>
-
-              <Ionicons
-                name="chevron-forward-outline"
-                size={20}
-                color="#999"
-              />
-            </TouchableOpacity>
-
+              <Text style={styles.infoValue}>
+                Triveni
+              </Text>
+            </View>
           </View>
 
-          {/* Logout */}
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={handleLogout}
-          >
-            <Ionicons
-              name="log-out-outline"
-              size={22}
-              color="#D32F2F"
-            />
+          {/* Roll Number */}
+          <View style={styles.infoRow}>
+            <View style={styles.infoIcon}>
+              <Ionicons
+                name="card-outline"
+                size={21}
+                color="#6C63FF"
+              />
+            </View>
 
-            <Text style={styles.logoutText}>
-              Logout
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>
+                Roll Number
+              </Text>
+
+              <Text style={styles.infoValue}>
+                25NN5A0512
+              </Text>
+            </View>
+          </View>
+
+          {/* Department */}
+          <View style={styles.infoRow}>
+            <View style={styles.infoIcon}>
+              <Ionicons
+                name="school-outline"
+                size={21}
+                color="#6C63FF"
+              />
+            </View>
+
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>
+                Department
+              </Text>
+
+              <Text style={styles.infoValue}>
+                Computer Science & Engineering
+              </Text>
+            </View>
+          </View>
+
+          {/* Email */}
+          <View style={styles.infoRow}>
+            <View style={styles.infoIcon}>
+              <Ionicons
+                name="mail-outline"
+                size={21}
+                color="#6C63FF"
+              />
+            </View>
+
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>
+                Email
+              </Text>
+
+              <Text style={styles.infoValue}>
+                student@example.com
+              </Text>
+            </View>
+          </View>
+
+          {/* Phone */}
+          <View style={styles.infoRow}>
+            <View style={styles.infoIcon}>
+              <Ionicons
+                name="call-outline"
+                size={21}
+                color="#6C63FF"
+              />
+            </View>
+
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>
+                Phone
+              </Text>
+
+              <Text style={styles.infoValue}>
+                +91 XXXXX XXXXX
+              </Text>
+            </View>
+          </View>
+
+        </View>
+
+        {/* Academic Information */}
+        <Text style={styles.sectionTitle}>
+          Academic Information
+        </Text>
+
+        <View style={styles.statsContainer}>
+
+          {/* Year */}
+          <View style={styles.statCard}>
+            <View style={styles.statIcon}>
+              <Ionicons
+                name="school-outline"
+                size={25}
+                color="#6C63FF"
+              />
+            </View>
+
+            <Text style={styles.statNumber}>
+              3rd
             </Text>
+
+            <Text style={styles.statLabel}>
+              Year
+            </Text>
+          </View>
+
+          {/* Semester */}
+          <View style={styles.statCard}>
+            <View style={styles.statIcon}>
+              <Ionicons
+                name="book-outline"
+                size={25}
+                color="#6C63FF"
+              />
+            </View>
+
+            <Text style={styles.statNumber}>
+              2-1
+            </Text>
+
+            <Text style={styles.statLabel}>
+              Semester
+            </Text>
+          </View>
+
+          {/* Attendance */}
+          <View style={styles.statCard}>
+            <View style={styles.statIcon}>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={25}
+                color="#6C63FF"
+              />
+            </View>
+
+            <Text style={styles.statNumber}>
+              82%
+            </Text>
+
+            <Text style={styles.statLabel}>
+              Attendance
+            </Text>
+          </View>
+
+        </View>
+
+        {/* Quick Options */}
+        <Text style={styles.sectionTitle}>
+          Quick Options
+        </Text>
+
+        <View style={styles.optionsCard}>
+
+          {/* Events */}
+          <TouchableOpacity
+            style={styles.optionRow}
+            onPress={() =>
+              navigation.navigate("Event")
+            }
+          >
+            <View style={styles.optionIcon}>
+              <Ionicons
+                name="calendar-outline"
+                size={23}
+                color="#6C63FF"
+              />
+            </View>
+
+            <View style={styles.optionContent}>
+              <Text style={styles.optionTitle}>
+                My Events
+              </Text>
+
+              <Text style={styles.optionSubtitle}>
+                View upcoming college events
+              </Text>
+            </View>
+
+            <Ionicons
+              name="chevron-forward-outline"
+              size={20}
+              color="#999"
+            />
           </TouchableOpacity>
-        </>
-      )}
 
-      {/* Footer */}
-      <Text style={styles.footer}>
-        Campus Connect
-      </Text>
+          {/* Notices */}
+          <TouchableOpacity
+            style={styles.optionRow}
+            onPress={() =>
+              navigation.navigate("Notice")
+            }
+          >
+            <View style={styles.optionIcon}>
+              <Ionicons
+                name="notifications-outline"
+                size={23}
+                color="#6C63FF"
+              />
+            </View>
 
-      <Text style={styles.version}>
-        Version 1.0.0
-      </Text>
+            <View style={styles.optionContent}>
+              <Text style={styles.optionTitle}>
+                Notices
+              </Text>
 
-    </ScrollView>
+              <Text style={styles.optionSubtitle}>
+                Check latest college notices
+              </Text>
+            </View>
+
+            <Ionicons
+              name="chevron-forward-outline"
+              size={20}
+              color="#999"
+            />
+          </TouchableOpacity>
+
+          {/* Settings */}
+          <TouchableOpacity
+            style={styles.optionRow}
+            onPress={() =>
+              navigation.navigate("Settings")
+            }
+          >
+            <View style={styles.optionIcon}>
+              <Ionicons
+                name="settings-outline"
+                size={23}
+                color="#6C63FF"
+              />
+            </View>
+
+            <View style={styles.optionContent}>
+              <Text style={styles.optionTitle}>
+                Settings
+              </Text>
+
+              <Text style={styles.optionSubtitle}>
+                Manage app preferences
+              </Text>
+            </View>
+
+            <Ionicons
+              name="chevron-forward-outline"
+              size={20}
+              color="#999"
+            />
+          </TouchableOpacity>
+
+        </View>
+
+        {/* Logout */}
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+        >
+          <Ionicons
+            name="log-out-outline"
+            size={22}
+            color="#D32F2F"
+          />
+
+          <Text style={styles.logoutText}>
+            Logout
+          </Text>
+        </TouchableOpacity>
+
+        {/* Footer */}
+        <Text style={styles.footer}>
+          Campus Connect
+        </Text>
+
+        <Text style={styles.version}>
+          Version 1.0.0
+        </Text>
+
+      </ScrollView>
+    </View>
   );
 }
-
-/* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F6FA",
-    paddingHorizontal: 18,
   },
 
   header: {
+    backgroundColor: "#6C63FF",
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 25,
-    paddingBottom: 20,
   },
 
-  headerSmallText: {
-    fontSize: 13,
-    color: "#888",
+  headerSmall: {
+    color: "#E8E7FF",
+    fontSize: 12,
   },
 
   headerTitle: {
-    fontSize: 28,
+    color: "#FFFFFF",
+    fontSize: 27,
     fontWeight: "bold",
-    color: "#333",
     marginTop: 3,
   },
 
@@ -481,76 +458,69 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#EEEDFF",
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
+  },
+
+  content: {
+    padding: 16,
+    paddingBottom: 40,
   },
 
   profileCard: {
-    backgroundColor: "#6C63FF",
-    borderRadius: 22,
-    paddingVertical: 28,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 22,
     alignItems: "center",
-    marginBottom: 25,
+    elevation: 4,
+    marginBottom: 22,
   },
 
-  avatarContainer: {
+  profileImage: {
     width: 105,
     height: 105,
     borderRadius: 53,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#EEEDFF",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,
-    position: "relative",
-  },
-
-  onlineDot: {
-    position: "absolute",
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: "#35C759",
-    right: 4,
-    bottom: 5,
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
   },
 
   profileName: {
-    color: "#FFFFFF",
-    fontSize: 23,
+    fontSize: 24,
     fontWeight: "bold",
+    color: "#333",
   },
 
   profileRole: {
-    color: "#E8E7FF",
     fontSize: 13,
+    color: "#666",
     marginTop: 5,
+    textAlign: "center",
   },
 
-  studentBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 13,
-    paddingVertical: 6,
-    borderRadius: 18,
-    marginTop: 12,
-  },
-
-  studentBadgeText: {
-    color: "#6C63FF",
+  profileCollege: {
     fontSize: 12,
-    fontWeight: "bold",
-    marginLeft: 5,
+    color: "#888",
+    marginTop: 3,
   },
 
-  sectionHeader: {
+  editButton: {
+    marginTop: 15,
+    backgroundColor: "#6C63FF",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+  },
+
+  editButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "bold",
+    marginLeft: 7,
   },
 
   sectionTitle: {
@@ -560,40 +530,24 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  smallEditButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#EEEDFF",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
-    marginBottom: 12,
-  },
-
-  smallEditText: {
-    color: "#6C63FF",
-    fontWeight: "bold",
-    marginLeft: 5,
-  },
-
   infoCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 20,
+    borderRadius: 17,
+    paddingHorizontal: 15,
+    marginBottom: 22,
     elevation: 3,
   },
 
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 17,
+    minHeight: 70,
   },
 
   infoIcon: {
-    width: 45,
-    height: 45,
-    borderRadius: 13,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     backgroundColor: "#EEEDFF",
     justifyContent: "center",
     alignItems: "center",
@@ -604,87 +558,73 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  label: {
-    fontSize: 12,
-    color: "#888",
-    marginBottom: 4,
+  infoLabel: {
+    fontSize: 11,
+    color: "#999",
   },
 
-  value: {
+  infoValue: {
     fontSize: 14,
     color: "#333",
     fontWeight: "600",
+    marginTop: 3,
   },
 
-  input: {
-    backgroundColor: "#F5F6FA",
-    borderWidth: 1,
-    borderColor: "#DDD",
-    borderRadius: 9,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    fontSize: 14,
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 22,
+  },
+
+  statCard: {
+    width: "31%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    paddingVertical: 15,
+    alignItems: "center",
+    elevation: 3,
+  },
+
+  statIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#EEEDFF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+
+  statNumber: {
+    fontSize: 18,
+    fontWeight: "bold",
     color: "#333",
   },
 
-  editActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 25,
-  },
-
-  cancelButton: {
-    width: "34%",
-    height: 50,
-    borderRadius: 13,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#DDD",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  cancelText: {
-    color: "#666",
-    fontWeight: "bold",
-    fontSize: 15,
-  },
-
-  saveButton: {
-    width: "62%",
-    height: 50,
-    borderRadius: 13,
-    backgroundColor: "#6C63FF",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  saveText: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
-    fontSize: 15,
-    marginLeft: 7,
+  statLabel: {
+    fontSize: 11,
+    color: "#888",
+    marginTop: 3,
   },
 
   optionsCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 18,
+    borderRadius: 17,
     paddingHorizontal: 15,
     marginBottom: 20,
     elevation: 3,
   },
 
   optionRow: {
+    minHeight: 75,
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 15,
   },
 
   optionIcon: {
-    width: 43,
-    height: 43,
-    borderRadius: 12,
+    width: 45,
+    height: 45,
+    borderRadius: 13,
     backgroundColor: "#EEEDFF",
     justifyContent: "center",
     alignItems: "center",
@@ -704,23 +644,24 @@ const styles = StyleSheet.create({
   optionSubtitle: {
     fontSize: 11,
     color: "#888",
-    marginTop: 3,
+    marginTop: 4,
   },
 
   logoutButton: {
     height: 52,
     borderRadius: 14,
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#D32F2F",
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
+    elevation: 2,
   },
 
   logoutText: {
     color: "#D32F2F",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
     marginLeft: 8,
   },
@@ -730,6 +671,7 @@ const styles = StyleSheet.create({
     color: "#777",
     fontSize: 13,
     fontWeight: "bold",
+    marginTop: 25,
   },
 
   version: {
@@ -737,6 +679,5 @@ const styles = StyleSheet.create({
     color: "#AAA",
     fontSize: 11,
     marginTop: 4,
-    marginBottom: 30,
   },
 });
