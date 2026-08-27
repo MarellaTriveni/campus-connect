@@ -1,20 +1,62 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function ProfileScreen({ navigation }) {
+  // Profile data
+  const [name, setName] = useState("Triveni");
+  const [email, setEmail] = useState("student@example.com");
+  const [phone, setPhone] = useState("+91 XXXXX XXXXX");
+  const [department, setDepartment] = useState(
+    "Computer Science & Engineering"
+  );
+
+  // Edit mode
+  const [isEditing, setIsEditing] = useState(false);
+
   const handleEditProfile = () => {
+    setIsEditing(true);
+  };
+
+  const handleSaveProfile = () => {
+    if (name.trim() === "") {
+      Alert.alert("Error", "Please enter your name.");
+      return;
+    }
+
+    if (email.trim() === "") {
+      Alert.alert("Error", "Please enter your email.");
+      return;
+    }
+
+    if (phone.trim() === "") {
+      Alert.alert("Error", "Please enter your phone number.");
+      return;
+    }
+
+    if (department.trim() === "") {
+      Alert.alert("Error", "Please enter your department.");
+      return;
+    }
+
+    setIsEditing(false);
+
     Alert.alert(
-      "Edit Profile",
-      "Profile editing feature will be available soon."
+      "Success",
+      "Your profile has been updated successfully."
     );
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
   };
 
   const handleLogout = () => {
@@ -72,7 +114,6 @@ export default function ProfileScreen({ navigation }) {
         {/* Profile Card */}
         <View style={styles.profileCard}>
 
-          {/* Profile Circle */}
           <View style={styles.profileImage}>
             <Ionicons
               name="person"
@@ -82,34 +123,177 @@ export default function ProfileScreen({ navigation }) {
           </View>
 
           <Text style={styles.profileName}>
-            Triveni
+            {name}
           </Text>
 
           <Text style={styles.profileRole}>
-            Computer Science Engineering
+            {department}
           </Text>
 
           <Text style={styles.profileCollege}>
             Student
           </Text>
 
-          {/* Edit Button */}
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={handleEditProfile}
-          >
-            <Ionicons
-              name="create-outline"
-              size={18}
-              color="#FFFFFF"
-            />
+          {!isEditing ? (
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={handleEditProfile}
+            >
+              <Ionicons
+                name="create-outline"
+                size={18}
+                color="#FFFFFF"
+              />
 
-            <Text style={styles.editButtonText}>
-              Edit Profile
-            </Text>
-          </TouchableOpacity>
+              <Text style={styles.editButtonText}>
+                Edit Profile
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.editButtonsContainer}>
+
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleCancelEdit}
+              >
+                <Ionicons
+                  name="close-outline"
+                  size={18}
+                  color="#D32F2F"
+                />
+
+                <Text style={styles.cancelButtonText}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleSaveProfile}
+              >
+                <Ionicons
+                  name="checkmark-outline"
+                  size={18}
+                  color="#FFFFFF"
+                />
+
+                <Text style={styles.saveButtonText}>
+                  Save
+                </Text>
+              </TouchableOpacity>
+
+            </View>
+          )}
 
         </View>
+
+        {/* Edit Form */}
+        {isEditing && (
+          <>
+            <Text style={styles.sectionTitle}>
+              Edit Information
+            </Text>
+
+            <View style={styles.formCard}>
+
+              {/* Name */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>
+                  Full Name
+                </Text>
+
+                <View style={styles.inputWrapper}>
+                  <Ionicons
+                    name="person-outline"
+                    size={20}
+                    color="#6C63FF"
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    value={name}
+                    onChangeText={setName}
+                    placeholder="Enter your name"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+              </View>
+
+              {/* Email */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>
+                  Email
+                </Text>
+
+                <View style={styles.inputWrapper}>
+                  <Ionicons
+                    name="mail-outline"
+                    size={20}
+                    color="#6C63FF"
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="Enter your email"
+                    placeholderTextColor="#999"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+              </View>
+
+              {/* Phone */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>
+                  Phone
+                </Text>
+
+                <View style={styles.inputWrapper}>
+                  <Ionicons
+                    name="call-outline"
+                    size={20}
+                    color="#6C63FF"
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    value={phone}
+                    onChangeText={setPhone}
+                    placeholder="Enter your phone"
+                    placeholderTextColor="#999"
+                    keyboardType="phone-pad"
+                  />
+                </View>
+              </View>
+
+              {/* Department */}
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>
+                  Department
+                </Text>
+
+                <View style={styles.inputWrapper}>
+                  <Ionicons
+                    name="school-outline"
+                    size={20}
+                    color="#6C63FF"
+                  />
+
+                  <TextInput
+                    style={styles.input}
+                    value={department}
+                    onChangeText={setDepartment}
+                    placeholder="Enter department"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+              </View>
+
+            </View>
+          </>
+        )}
 
         {/* Student Information */}
         <Text style={styles.sectionTitle}>
@@ -134,7 +318,7 @@ export default function ProfileScreen({ navigation }) {
               </Text>
 
               <Text style={styles.infoValue}>
-                Triveni
+                {name}
               </Text>
             </View>
           </View>
@@ -176,7 +360,7 @@ export default function ProfileScreen({ navigation }) {
               </Text>
 
               <Text style={styles.infoValue}>
-                Computer Science & Engineering
+                {department}
               </Text>
             </View>
           </View>
@@ -197,7 +381,7 @@ export default function ProfileScreen({ navigation }) {
               </Text>
 
               <Text style={styles.infoValue}>
-                student@example.com
+                {email}
               </Text>
             </View>
           </View>
@@ -218,7 +402,7 @@ export default function ProfileScreen({ navigation }) {
               </Text>
 
               <Text style={styles.infoValue}>
-                +91 XXXXX XXXXX
+                {phone}
               </Text>
             </View>
           </View>
@@ -232,7 +416,6 @@ export default function ProfileScreen({ navigation }) {
 
         <View style={styles.statsContainer}>
 
-          {/* Year */}
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
               <Ionicons
@@ -251,7 +434,6 @@ export default function ProfileScreen({ navigation }) {
             </Text>
           </View>
 
-          {/* Semester */}
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
               <Ionicons
@@ -270,7 +452,6 @@ export default function ProfileScreen({ navigation }) {
             </Text>
           </View>
 
-          {/* Attendance */}
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
               <Ionicons
@@ -412,7 +593,6 @@ export default function ProfileScreen({ navigation }) {
           </Text>
         </TouchableOpacity>
 
-        {/* Footer */}
         <Text style={styles.footer}>
           Campus Connect
         </Text>
@@ -523,11 +703,86 @@ const styles = StyleSheet.create({
     marginLeft: 7,
   },
 
+  editButtonsContainer: {
+    flexDirection: "row",
+    marginTop: 15,
+    gap: 10,
+  },
+
+  cancelButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#D32F2F",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  cancelButtonText: {
+    color: "#D32F2F",
+    fontSize: 13,
+    fontWeight: "bold",
+    marginLeft: 5,
+  },
+
+  saveButton: {
+    backgroundColor: "#6C63FF",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  saveButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "bold",
+    marginLeft: 5,
+  },
+
   sectionTitle: {
     fontSize: 19,
     fontWeight: "bold",
     color: "#333",
     marginBottom: 12,
+  },
+
+  formCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 17,
+    padding: 16,
+    marginBottom: 22,
+    elevation: 3,
+  },
+
+  inputContainer: {
+    marginBottom: 15,
+  },
+
+  inputLabel: {
+    fontSize: 12,
+    color: "#555",
+    fontWeight: "bold",
+    marginBottom: 7,
+  },
+
+  inputWrapper: {
+    height: 48,
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+  },
+
+  input: {
+    flex: 1,
+    marginLeft: 9,
+    color: "#333",
+    fontSize: 14,
   },
 
   infoCard: {
