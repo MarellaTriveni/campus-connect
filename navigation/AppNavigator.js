@@ -12,9 +12,7 @@ export default function AppNavigator() {
   return (
     <Stack.Navigator
       initialRouteName="Login"
-      screenOptions={{
-        headerShown: false,
-      }}
+      screenOptions={{ headerShown: false }}
     >
       <Stack.Screen
         name="Login"
@@ -27,7 +25,7 @@ export default function AppNavigator() {
       />
 
       <Stack.Screen
-        name="Main"
+        name="BottomTabs"
         component={BottomTabs}
       />
 

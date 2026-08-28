@@ -1,54 +1,37 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from "react-native";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Check login status when screen opens
- 
-
-  async function handleLogin() {
-    if (email === "" || password === "") {
-      alert("Please fill all the fields");
+  const handleLogin = () => {
+    if (email.trim() === "" || password.trim() === "") {
+      Alert.alert("Error", "Please enter email and password");
       return;
     }
 
-    // Hardcoded credentials
-    const validEmail = "student@gmail.com";
-    const validPassword = "123456";
-
-    if (email === validEmail && password === validPassword) {
-      await AsyncStorage.setItem("isLoggedIn", "true");
-
-      alert("Login Successful");
-
-      navigation.replace("Main");
-    } else {
-      alert("Invalid Email or Password");
-    }
-  }
-   useEffect(() => {
-    checkLogin();
-  }, []);
-
-  const checkLogin = async () => {
-    const status = await AsyncStorage.getItem("isLoggedIn");
-
-    if (status === "true") {
-      navigation.replace("Main");
-    }
+    // Login successful
+    navigation.replace("BottomTabs");
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login page</Text>
+      <Text style={styles.title}>Welcome Back 👋</Text>
+      <Text style={styles.subtitle}>Login to Campus Connect</Text>
 
       <TextInput
         style={styles.input}
         placeholder="Enter Email"
         keyboardType="email-address"
+        autoCapitalize="none"
         value={email}
         onChangeText={setEmail}
       />
@@ -61,25 +44,17 @@ export default function LoginScreen({ navigation }) {
         onChangeText={setPassword}
       />
 
-      <Pressable
-        onPress={handleLogin}
-        style={({ hovered }) => [
-          styles.button,
-          hovered && styles.buttonHover,
-        ]}
-      >
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Login</Text>
-      </Pressable>
+      </TouchableOpacity>
 
-      <Pressable
-        onPress={() => navigation.goBack()}
-        style={({ hovered }) => [
-          styles.backButton,
-          hovered && styles.backButtonHover,
-        ]}
+      <TouchableOpacity
+        onPress={() => navigation.navigate("StudentRegistration")}
       >
-        <Text style={styles.buttonText}>Back to Register</Text>
-      </Pressable>
+        <Text style={styles.registerText}>
+          Don't have an account? Register
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -88,54 +63,53 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    padding: 20,
-    backgroundColor: "#E0F2FE",
+    padding: 25,
+    backgroundColor: "#F5F3FF",
   },
 
   title: {
     fontSize: 30,
     fontWeight: "bold",
-    color: "#1E3A8A",
     textAlign: "center",
-    marginBottom: 25,
+    color: "#4F46E5",
+    marginBottom: 8,
+  },
+
+  subtitle: {
+    textAlign: "center",
+    fontSize: 16,
+    color: "#666",
+    marginBottom: 30,
   },
 
   input: {
-    borderWidth: 2,
-    borderColor: "#60A5FA",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 15,
     backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    fontSize: 16,
   },
 
   button: {
-    backgroundColor: "#2563EB",
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: "#6366F1",
+    padding: 16,
+    borderRadius: 12,
     alignItems: "center",
     marginTop: 10,
   },
 
-  buttonHover: {
-    backgroundColor: "#1D4ED8",
-  },
-
-  backButton: {
-    backgroundColor: "#10B981",
-    padding: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 15,
-  },
-
-  backButtonHover: {
-    backgroundColor: "#059669",
-  },
-
   buttonText: {
-    color: "white",
+    color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "bold",
+  },
+
+  registerText: {
+    textAlign: "center",
+    color: "#6366F1",
+    marginTop: 20,
+    fontSize: 15,
   },
 });
