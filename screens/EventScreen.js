@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,107 +8,105 @@ import {
   TextInput,
   Alert,
 } from "react-native";
+
 import { Ionicons } from "@expo/vector-icons";
 
-const initialEvents = [
-  {
-    id: 1,
-    title: "React Native Workshop",
-    category: "Workshop",
-    date: "18 Aug 2026",
-    time: "10:00 AM",
-    location: "Seminar Hall",
-  },
-  {
-    id: 2,
-    title: "Coding Contest",
-    category: "Competition",
-    date: "20 Aug 2026",
-    time: "2:00 PM",
-    location: "Computer Lab",
-  },
-  {
-    id: 3,
-    title: "Campus Hackathon",
-    category: "Hackathon",
-    date: "22 Aug 2026",
-    time: "9:00 AM",
-    location: "Innovation Center",
-  },
-  {
-    id: 4,
-    title: "Placement Training",
-    category: "Placement",
-    date: "25 Aug 2026",
-    time: "11:00 AM",
-    location: "Auditorium",
-  },
-  {
-    id: 5,
-    title: "Technical Seminar",
-    category: "Seminar",
-    date: "28 Aug 2026",
-    time: "10:30 AM",
-    location: "Seminar Hall",
-  },
-];
-
-const categories = [
-  "All",
-  "Workshop",
-  "Competition",
-  "Hackathon",
-  "Placement",
-  "Seminar",
-];
-
 export default function EventScreen() {
-  const [search, setSearch] = useState("");
+  const [searchText, setSearchText] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // Stores registered event IDs
-  const [registeredEvents, setRegisteredEvents] = useState([]);
+  const events = [
+    {
+      id: 1,
+      title: "Technical Fest",
+      date: "September 5, 2026",
+      time: "10:00 AM",
+      location: "College Auditorium",
+      category: "Technical",
+      icon: "laptop-outline",
+      description:
+        "A technical festival with coding, project exhibitions and technical activities.",
+    },
+    {
+      id: 2,
+      title: "Coding Contest",
+      date: "September 10, 2026",
+      time: "11:00 AM",
+      location: "Computer Lab",
+      category: "Technical",
+      icon: "code-slash-outline",
+      description:
+        "Test your programming skills by participating in the coding contest.",
+    },
+    {
+      id: 3,
+      title: "Cultural Event",
+      date: "September 15, 2026",
+      time: "2:00 PM",
+      location: "College Ground",
+      category: "Cultural",
+      icon: "musical-notes-outline",
+      description:
+        "Enjoy music, dance and cultural performances by students.",
+    },
+    {
+      id: 4,
+      title: "Sports Meet",
+      date: "September 20, 2026",
+      time: "9:00 AM",
+      location: "Sports Ground",
+      category: "Sports",
+      icon: "football-outline",
+      description:
+        "Annual sports meet with different games and competitions.",
+    },
+    {
+      id: 5,
+      title: "Career Guidance",
+      date: "September 25, 2026",
+      time: "10:30 AM",
+      location: "Seminar Hall",
+      category: "Career",
+      icon: "briefcase-outline",
+      description:
+        "Career guidance session to help students understand job opportunities.",
+    },
+  ];
 
-  const filteredEvents = useMemo(() => {
-    return initialEvents.filter((event) => {
-      const searchText = search.trim().toLowerCase();
+  const categories = [
+    "All",
+    "Technical",
+    "Cultural",
+    "Sports",
+    "Career",
+  ];
 
-      const matchesSearch =
-        event.title.toLowerCase().includes(searchText) ||
-        event.location.toLowerCase().includes(searchText) ||
-        event.category.toLowerCase().includes(searchText);
+  const filteredEvents = events.filter((event) => {
+    const matchesSearch =
+      event.title
+        .toLowerCase()
+        .includes(searchText.toLowerCase()) ||
+      event.description
+        .toLowerCase()
+        .includes(searchText.toLowerCase());
 
-      const matchesCategory =
-        selectedCategory === "All" ||
-        event.category === selectedCategory;
+    const matchesCategory =
+      selectedCategory === "All" ||
+      event.category === selectedCategory;
 
-      return matchesSearch && matchesCategory;
-    });
-  }, [search, selectedCategory]);
+    return matchesSearch && matchesCategory;
+  });
 
-  const toggleRegistration = (event) => {
-    const isRegistered = registeredEvents.includes(event.id);
-
-    if (isRegistered) {
-      setRegisteredEvents((current) =>
-        current.filter((id) => id !== event.id)
-      );
-
-      Alert.alert(
-        "Registration Cancelled",
-        `You are no longer registered for ${event.title}.`
-      );
-    } else {
-      setRegisteredEvents((current) => [
-        ...current,
-        event.id,
-      ]);
-
-      Alert.alert(
-        "Registration Successful",
-        `You are registered for ${event.title}.`
-      );
-    }
+  const showEventDetails = (event) => {
+    Alert.alert(
+      event.title,
+      `📅 Date: ${event.date}\n\n` +
+        `⏰ Time: ${event.time}\n\n` +
+        `📍 Location: ${event.location}\n\n` +
+        `🏷️ Category: ${event.category}\n\n` +
+        `${event.description}`,
+      [{ text: "OK" }]
+    );
   };
 
   return (
@@ -117,19 +115,19 @@ export default function EventScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerSmall}>
+          <Text style={styles.smallTitle}>
             Campus Connect
           </Text>
 
           <Text style={styles.headerTitle}>
-            Events
+            Events 📅
           </Text>
         </View>
 
-        <View style={styles.calendarIcon}>
+        <View style={styles.headerIcon}>
           <Ionicons
-            name="calendar-outline"
-            size={28}
+            name="calendar"
+            size={27}
             color="#6C63FF"
           />
         </View>
@@ -140,37 +138,11 @@ export default function EventScreen() {
         contentContainerStyle={styles.content}
       >
 
-        {/* Registration Summary */}
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryIcon}>
-            <Ionicons
-              name="checkmark-circle-outline"
-              size={30}
-              color="#6C63FF"
-            />
-          </View>
-
-          <View style={styles.summaryContent}>
-            <Text style={styles.summaryTitle}>
-              My Registrations
-            </Text>
-
-            <Text style={styles.summarySubtitle}>
-              {registeredEvents.length} event
-              {registeredEvents.length !== 1 ? "s" : ""} registered
-            </Text>
-          </View>
-
-          <Text style={styles.summaryNumber}>
-            {registeredEvents.length}
-          </Text>
-        </View>
-
         {/* Search */}
         <View style={styles.searchBox}>
           <Ionicons
             name="search-outline"
-            size={21}
+            size={22}
             color="#777"
           />
 
@@ -178,13 +150,13 @@ export default function EventScreen() {
             style={styles.searchInput}
             placeholder="Search events..."
             placeholderTextColor="#999"
-            value={search}
-            onChangeText={setSearch}
+            value={searchText}
+            onChangeText={setSearchText}
           />
 
-          {search.length > 0 && (
+          {searchText.length > 0 && (
             <TouchableOpacity
-              onPress={() => setSearch("")}
+              onPress={() => setSearchText("")}
             >
               <Ionicons
                 name="close-circle"
@@ -195,7 +167,11 @@ export default function EventScreen() {
           )}
         </View>
 
-        {/* Category Filter */}
+        {/* Categories */}
+        <Text style={styles.categoryTitle}>
+          Event Categories
+        </Text>
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -209,7 +185,9 @@ export default function EventScreen() {
                 selectedCategory === category &&
                   styles.selectedCategory,
               ]}
-              onPress={() => setSelectedCategory(category)}
+              onPress={() =>
+                setSelectedCategory(category)
+              }
             >
               <Text
                 style={[
@@ -224,160 +202,93 @@ export default function EventScreen() {
           ))}
         </ScrollView>
 
-        {/* Result Count */}
+        {/* Result */}
         <View style={styles.resultRow}>
-          <Text style={styles.resultText}>
+          <Text style={styles.sectionTitle}>
             Upcoming Events
           </Text>
 
-          <Text style={styles.countText}>
+          <Text style={styles.resultCount}>
             {filteredEvents.length} found
           </Text>
         </View>
 
         {/* Event Cards */}
         {filteredEvents.length > 0 ? (
-          filteredEvents.map((event) => {
-            const isRegistered = registeredEvents.includes(
-              event.id
-            );
+          filteredEvents.map((event) => (
+            <TouchableOpacity
+              key={event.id}
+              style={styles.eventCard}
+              activeOpacity={0.8}
+              onPress={() =>
+                showEventDetails(event)
+              }
+            >
 
-            return (
-              <View
-                key={event.id}
-                style={styles.eventCard}
-              >
+              {/* Event Icon */}
+              <View style={styles.iconBox}>
+                <Ionicons
+                  name={event.icon}
+                  size={28}
+                  color="#6C63FF"
+                />
+              </View>
 
-                {/* Event Icon */}
-                <View style={styles.eventIcon}>
-                  <Ionicons
-                    name={
-                      event.category === "Workshop"
-                        ? "phone-portrait-outline"
-                        : event.category === "Hackathon"
-                        ? "laptop-outline"
-                        : event.category === "Placement"
-                        ? "briefcase-outline"
-                        : event.category === "Competition"
-                        ? "trophy-outline"
-                        : "school-outline"
-                    }
-                    size={28}
-                    color="#6C63FF"
-                  />
-                </View>
+              {/* Event Content */}
+              <View style={styles.eventContent}>
 
-                <View style={styles.eventContent}>
+                <View style={styles.titleRow}>
+                  <Text style={styles.eventTitle}>
+                    {event.title}
+                  </Text>
 
-                  <View style={styles.titleRow}>
-                    <Text style={styles.eventTitle}>
-                      {event.title}
-                    </Text>
-
-                    {isRegistered && (
-                      <View style={styles.registeredBadge}>
-                        <Text style={styles.registeredBadgeText}>
-                          Registered
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {/* Category */}
-                  <View style={styles.categoryBadge}>
-                    <Text style={styles.categoryBadgeText}>
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>
                       {event.category}
                     </Text>
                   </View>
-
-                  {/* Date */}
-                  <View style={styles.detailRow}>
-                    <Ionicons
-                      name="calendar-outline"
-                      size={16}
-                      color="#777"
-                    />
-
-                    <Text style={styles.detailText}>
-                      {event.date}
-                    </Text>
-                  </View>
-
-                  {/* Time */}
-                  <View style={styles.detailRow}>
-                    <Ionicons
-                      name="time-outline"
-                      size={16}
-                      color="#777"
-                    />
-
-                    <Text style={styles.detailText}>
-                      {event.time}
-                    </Text>
-                  </View>
-
-                  {/* Location */}
-                  <View style={styles.detailRow}>
-                    <Ionicons
-                      name="location-outline"
-                      size={16}
-                      color="#777"
-                    />
-
-                    <Text style={styles.detailText}>
-                      {event.location}
-                    </Text>
-                  </View>
-
-                  {/* Register Button */}
-                  <TouchableOpacity
-                    style={[
-                      styles.registerButton,
-                      isRegistered &&
-                        styles.unregisterButton,
-                    ]}
-                    onPress={() =>
-                      toggleRegistration(event)
-                    }
-                  >
-                    <Ionicons
-                      name={
-                        isRegistered
-                          ? "checkmark-circle-outline"
-                          : "add-circle-outline"
-                      }
-                      size={19}
-                      color={
-                        isRegistered
-                          ? "#2E7D32"
-                          : "#FFFFFF"
-                      }
-                    />
-
-                    <Text
-                      style={[
-                        styles.registerButtonText,
-                        isRegistered &&
-                          styles.unregisterButtonText,
-                      ]}
-                    >
-                      {isRegistered
-                        ? "Registered"
-                        : "Register Now"}
-                    </Text>
-                  </TouchableOpacity>
-
                 </View>
+
+                <View style={styles.infoRow}>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={14}
+                    color="#777"
+                  />
+
+                  <Text style={styles.infoText}>
+                    {event.date}
+                  </Text>
+                </View>
+
+                <View style={styles.infoRow}>
+                  <Ionicons
+                    name="location-outline"
+                    size={14}
+                    color="#777"
+                  />
+
+                  <Text style={styles.infoText}>
+                    {event.location}
+                  </Text>
+                </View>
+
               </View>
-            );
-          })
+
+              <Ionicons
+                name="chevron-forward"
+                size={21}
+                color="#999"
+              />
+
+            </TouchableOpacity>
+          ))
         ) : (
-          /* Empty State */
-          <View style={styles.emptyContainer}>
+          <View style={styles.emptyBox}>
             <Ionicons
-              name="calendar-clear-outline"
-              size={65}
-              color="#AAA"
+              name="calendar-outline"
+              size={50}
+              color="#aaa"
             />
 
             <Text style={styles.emptyTitle}>
@@ -390,10 +301,18 @@ export default function EventScreen() {
           </View>
         )}
 
-        {/* Footer */}
-        <Text style={styles.footer}>
-          Campus Connect • Events
-        </Text>
+        {/* Information */}
+        <View style={styles.infoBox}>
+          <Ionicons
+            name="information-circle-outline"
+            size={23}
+            color="#6C63FF"
+          />
+
+          <Text style={styles.infoBoxText}>
+            Tap an event to view complete details.
+          </Text>
+        </View>
 
       </ScrollView>
     </View>
@@ -409,110 +328,76 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#6C63FF",
     paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 22,
     paddingHorizontal: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
 
-  headerSmall: {
-    color: "#E8E7FF",
-    fontSize: 12,
+  smallTitle: {
+    color: "#E5E3FF",
+    fontSize: 13,
   },
 
   headerTitle: {
     color: "#FFFFFF",
-    fontSize: 27,
+    fontSize: 28,
     fontWeight: "bold",
     marginTop: 3,
   },
 
-  calendarIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  headerIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: "#FFFFFF",
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
   },
 
   content: {
     padding: 16,
-    paddingBottom: 30,
-  },
-
-  summaryCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-    elevation: 3,
-  },
-
-  summaryIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 14,
-    backgroundColor: "#EEEDFF",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-
-  summaryContent: {
-    flex: 1,
-  },
-
-  summaryTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-  },
-
-  summarySubtitle: {
-    fontSize: 12,
-    color: "#888",
-    marginTop: 4,
-  },
-
-  summaryNumber: {
-    fontSize: 27,
-    fontWeight: "bold",
-    color: "#6C63FF",
+    paddingBottom: 40,
   },
 
   searchBox: {
-    height: 50,
+    height: 52,
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    paddingHorizontal: 14,
+    borderRadius: 14,
     flexDirection: "row",
     alignItems: "center",
-    elevation: 2,
+    paddingHorizontal: 15,
+    elevation: 3,
+    marginBottom: 20,
   },
 
   searchInput: {
     flex: 1,
-    marginLeft: 9,
     fontSize: 15,
     color: "#333",
+    marginLeft: 10,
+  },
+
+  categoryTitle: {
+    fontSize: 17,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 10,
   },
 
   categoryScroll: {
-    marginTop: 14,
+    marginBottom: 20,
   },
 
   categoryButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+    paddingHorizontal: 17,
+    paddingVertical: 9,
     borderRadius: 20,
     backgroundColor: "#FFFFFF",
+    marginRight: 10,
     borderWidth: 1,
     borderColor: "#DDD",
-    marginRight: 8,
   },
 
   selectedCategory: {
@@ -521,9 +406,9 @@ const styles = StyleSheet.create({
   },
 
   categoryText: {
-    fontSize: 12,
-    color: "#555",
-    fontWeight: "500",
+    fontSize: 13,
+    color: "#666",
+    fontWeight: "600",
   },
 
   selectedCategoryText: {
@@ -534,37 +419,37 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 20,
-    marginBottom: 10,
+    marginBottom: 12,
   },
 
-  resultText: {
-    fontSize: 19,
+  sectionTitle: {
+    fontSize: 20,
     fontWeight: "bold",
     color: "#333",
   },
 
-  countText: {
+  resultCount: {
     fontSize: 12,
-    color: "#888",
+    color: "#777",
   },
 
   eventCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 17,
     padding: 15,
-    marginBottom: 15,
     flexDirection: "row",
-    elevation: 3,
+    alignItems: "center",
+    marginBottom: 12,
+    elevation: 2,
   },
 
-  eventIcon: {
+  iconBox: {
     width: 52,
     height: 52,
-    borderRadius: 14,
+    borderRadius: 15,
     backgroundColor: "#EEEDFF",
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
     marginRight: 12,
   },
 
@@ -574,94 +459,53 @@ const styles = StyleSheet.create({
 
   titleRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
   },
 
   eventTitle: {
     flex: 1,
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: "bold",
     color: "#333",
-    marginRight: 5,
   },
 
-  registeredBadge: {
-    backgroundColor: "#E8F5E9",
+  badge: {
+    backgroundColor: "#EEEDFF",
     paddingHorizontal: 7,
     paddingVertical: 4,
     borderRadius: 8,
+    marginLeft: 5,
   },
 
-  registeredBadgeText: {
-    fontSize: 9,
-    color: "#2E7D32",
-    fontWeight: "bold",
-  },
-
-  categoryBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: "#EEEDFF",
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginTop: 7,
-    marginBottom: 7,
-  },
-
-  categoryBadgeText: {
-    fontSize: 10,
+  badgeText: {
     color: "#6C63FF",
+    fontSize: 9,
     fontWeight: "bold",
   },
 
-  detailRow: {
+  infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 5,
+    marginTop: 4,
   },
 
-  detailText: {
-    fontSize: 12,
-    color: "#777",
-    marginLeft: 7,
+  infoText: {
+    fontSize: 11,
+    color: "#888",
+    marginLeft: 5,
   },
 
-  registerButton: {
-    height: 40,
-    backgroundColor: "#6C63FF",
-    borderRadius: 9,
-    marginTop: 12,
-    flexDirection: "row",
-    justifyContent: "center",
+  emptyBox: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 35,
     alignItems: "center",
-  },
-
-  registerButtonText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "bold",
-    marginLeft: 6,
-  },
-
-  unregisterButton: {
-    backgroundColor: "#E8F5E9",
-    borderWidth: 1,
-    borderColor: "#A5D6A7",
-  },
-
-  unregisterButtonText: {
-    color: "#2E7D32",
-  },
-
-  emptyContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 70,
+    marginTop: 10,
   },
 
   emptyTitle: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: "bold",
     color: "#555",
     marginTop: 12,
@@ -669,14 +513,23 @@ const styles = StyleSheet.create({
 
   emptyText: {
     fontSize: 13,
-    color: "#888",
+    color: "#999",
     marginTop: 5,
   },
 
-  footer: {
-    textAlign: "center",
-    color: "#999",
+  infoBox: {
+    backgroundColor: "#EEEDFF",
+    borderRadius: 14,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+
+  infoBoxText: {
+    flex: 1,
     fontSize: 12,
-    marginTop: 15,
+    color: "#666",
+    marginLeft: 9,
   },
 });
