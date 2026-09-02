@@ -8,78 +8,61 @@ import {
   TextInput,
   Alert,
 } from "react-native";
+
 import { Ionicons } from "@expo/vector-icons";
 
-export default function ProfileScreen({ navigation }) {
-  // Profile data
-  const [name, setName] = useState("Triveni");
-  const [email, setEmail] = useState("student@example.com");
-  const [phone, setPhone] = useState("+91 XXXXX XXXXX");
-  const [department, setDepartment] = useState(
-    "Computer Science & Engineering"
-  );
-
-  // Edit mode
+export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleEditProfile = () => {
+  const [name, setName] = useState("Triveni");
+  const [department, setDepartment] = useState("Computer Science & Engineering");
+  const [email, setEmail] = useState("triveni@gmail.com");
+  const [phone, setPhone] = useState("9876543210");
+
+  const [tempName, setTempName] = useState(name);
+  const [tempDepartment, setTempDepartment] =
+    useState(department);
+  const [tempEmail, setTempEmail] = useState(email);
+  const [tempPhone, setTempPhone] = useState(phone);
+
+  const startEditing = () => {
+    setTempName(name);
+    setTempDepartment(department);
+    setTempEmail(email);
+    setTempPhone(phone);
+
     setIsEditing(true);
   };
 
-  const handleSaveProfile = () => {
-    if (name.trim() === "") {
-      Alert.alert("Error", "Please enter your name.");
+  const saveProfile = () => {
+    if (
+      tempName.trim() === "" ||
+      tempDepartment.trim() === "" ||
+      tempEmail.trim() === "" ||
+      tempPhone.trim() === ""
+    ) {
+      Alert.alert(
+        "Missing Information",
+        "Please fill all fields."
+      );
       return;
     }
 
-    if (email.trim() === "") {
-      Alert.alert("Error", "Please enter your email.");
-      return;
-    }
-
-    if (phone.trim() === "") {
-      Alert.alert("Error", "Please enter your phone number.");
-      return;
-    }
-
-    if (department.trim() === "") {
-      Alert.alert("Error", "Please enter your department.");
-      return;
-    }
+    setName(tempName);
+    setDepartment(tempDepartment);
+    setEmail(tempEmail);
+    setPhone(tempPhone);
 
     setIsEditing(false);
 
     Alert.alert(
-      "Success",
+      "Profile Updated",
       "Your profile has been updated successfully."
     );
   };
 
-  const handleCancelEdit = () => {
+  const cancelEditing = () => {
     setIsEditing(false);
-  };
-
-  const handleLogout = () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to logout?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Logout",
-          style: "destructive",
-          onPress: () => {
-            Alert.alert(
-              "Logged Out",
-              "You have been logged out successfully."
-            );
-          },
-        },
-      ]
-    );
   };
 
   return (
@@ -87,23 +70,26 @@ export default function ProfileScreen({ navigation }) {
 
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerSmall}>
-            Campus Connect
-          </Text>
+        <Text style={styles.headerTitle}>
+          My Profile
+        </Text>
 
-          <Text style={styles.headerTitle}>
-            My Profile
-          </Text>
-        </View>
+        {!isEditing && (
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={startEditing}
+          >
+            <Ionicons
+              name="create-outline"
+              size={21}
+              color="#6C63FF"
+            />
 
-        <View style={styles.headerIcon}>
-          <Ionicons
-            name="person-outline"
-            size={27}
-            color="#6C63FF"
-          />
-        </View>
+            <Text style={styles.editText}>
+              Edit
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView
@@ -111,200 +97,33 @@ export default function ProfileScreen({ navigation }) {
         contentContainerStyle={styles.content}
       >
 
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
-
-          <View style={styles.profileImage}>
-            <Ionicons
-              name="person"
-              size={55}
-              color="#6C63FF"
-            />
+        {/* Profile Avatar */}
+        <View style={styles.profileSection}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {name.charAt(0).toUpperCase()}
+            </Text>
           </View>
 
           <Text style={styles.profileName}>
             {name}
           </Text>
 
-          <Text style={styles.profileRole}>
+          <Text style={styles.profileDepartment}>
             {department}
           </Text>
-
-          <Text style={styles.profileCollege}>
-            Student
-          </Text>
-
-          {!isEditing ? (
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={handleEditProfile}
-            >
-              <Ionicons
-                name="create-outline"
-                size={18}
-                color="#FFFFFF"
-              />
-
-              <Text style={styles.editButtonText}>
-                Edit Profile
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.editButtonsContainer}>
-
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={handleCancelEdit}
-              >
-                <Ionicons
-                  name="close-outline"
-                  size={18}
-                  color="#D32F2F"
-                />
-
-                <Text style={styles.cancelButtonText}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.saveButton}
-                onPress={handleSaveProfile}
-              >
-                <Ionicons
-                  name="checkmark-outline"
-                  size={18}
-                  color="#FFFFFF"
-                />
-
-                <Text style={styles.saveButtonText}>
-                  Save
-                </Text>
-              </TouchableOpacity>
-
-            </View>
-          )}
-
         </View>
 
-        {/* Edit Form */}
-        {isEditing && (
-          <>
-            <Text style={styles.sectionTitle}>
-              Edit Information
-            </Text>
+        {/* Profile Card */}
+        <View style={styles.card}>
 
-            <View style={styles.formCard}>
-
-              {/* Name */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>
-                  Full Name
-                </Text>
-
-                <View style={styles.inputWrapper}>
-                  <Ionicons
-                    name="person-outline"
-                    size={20}
-                    color="#6C63FF"
-                  />
-
-                  <TextInput
-                    style={styles.input}
-                    value={name}
-                    onChangeText={setName}
-                    placeholder="Enter your name"
-                    placeholderTextColor="#999"
-                  />
-                </View>
-              </View>
-
-              {/* Email */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>
-                  Email
-                </Text>
-
-                <View style={styles.inputWrapper}>
-                  <Ionicons
-                    name="mail-outline"
-                    size={20}
-                    color="#6C63FF"
-                  />
-
-                  <TextInput
-                    style={styles.input}
-                    value={email}
-                    onChangeText={setEmail}
-                    placeholder="Enter your email"
-                    placeholderTextColor="#999"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
-                </View>
-              </View>
-
-              {/* Phone */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>
-                  Phone
-                </Text>
-
-                <View style={styles.inputWrapper}>
-                  <Ionicons
-                    name="call-outline"
-                    size={20}
-                    color="#6C63FF"
-                  />
-
-                  <TextInput
-                    style={styles.input}
-                    value={phone}
-                    onChangeText={setPhone}
-                    placeholder="Enter your phone"
-                    placeholderTextColor="#999"
-                    keyboardType="phone-pad"
-                  />
-                </View>
-              </View>
-
-              {/* Department */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>
-                  Department
-                </Text>
-
-                <View style={styles.inputWrapper}>
-                  <Ionicons
-                    name="school-outline"
-                    size={20}
-                    color="#6C63FF"
-                  />
-
-                  <TextInput
-                    style={styles.input}
-                    value={department}
-                    onChangeText={setDepartment}
-                    placeholder="Enter department"
-                    placeholderTextColor="#999"
-                  />
-                </View>
-              </View>
-
-            </View>
-          </>
-        )}
-
-        {/* Student Information */}
-        <Text style={styles.sectionTitle}>
-          Student Information
-        </Text>
-
-        <View style={styles.infoCard}>
+          <Text style={styles.cardTitle}>
+            Personal Information
+          </Text>
 
           {/* Name */}
-          <View style={styles.infoRow}>
-            <View style={styles.infoIcon}>
+          <View style={styles.fieldContainer}>
+            <View style={styles.iconContainer}>
               <Ionicons
                 name="person-outline"
                 size={21}
@@ -312,41 +131,29 @@ export default function ProfileScreen({ navigation }) {
               />
             </View>
 
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>
+            <View style={styles.fieldContent}>
+              <Text style={styles.label}>
                 Full Name
               </Text>
 
-              <Text style={styles.infoValue}>
-                {name}
-              </Text>
-            </View>
-          </View>
-
-          {/* Roll Number */}
-          <View style={styles.infoRow}>
-            <View style={styles.infoIcon}>
-              <Ionicons
-                name="card-outline"
-                size={21}
-                color="#6C63FF"
-              />
-            </View>
-
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>
-                Roll Number
-              </Text>
-
-              <Text style={styles.infoValue}>
-                25NN5A0512
-              </Text>
+              {isEditing ? (
+                <TextInput
+                  style={styles.input}
+                  value={tempName}
+                  onChangeText={setTempName}
+                  placeholder="Enter your name"
+                />
+              ) : (
+                <Text style={styles.value}>
+                  {name}
+                </Text>
+              )}
             </View>
           </View>
 
           {/* Department */}
-          <View style={styles.infoRow}>
-            <View style={styles.infoIcon}>
+          <View style={styles.fieldContainer}>
+            <View style={styles.iconContainer}>
               <Ionicons
                 name="school-outline"
                 size={21}
@@ -354,20 +161,29 @@ export default function ProfileScreen({ navigation }) {
               />
             </View>
 
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>
+            <View style={styles.fieldContent}>
+              <Text style={styles.label}>
                 Department
               </Text>
 
-              <Text style={styles.infoValue}>
-                {department}
-              </Text>
+              {isEditing ? (
+                <TextInput
+                  style={styles.input}
+                  value={tempDepartment}
+                  onChangeText={setTempDepartment}
+                  placeholder="Enter department"
+                />
+              ) : (
+                <Text style={styles.value}>
+                  {department}
+                </Text>
+              )}
             </View>
           </View>
 
           {/* Email */}
-          <View style={styles.infoRow}>
-            <View style={styles.infoIcon}>
+          <View style={styles.fieldContainer}>
+            <View style={styles.iconContainer}>
               <Ionicons
                 name="mail-outline"
                 size={21}
@@ -375,20 +191,31 @@ export default function ProfileScreen({ navigation }) {
               />
             </View>
 
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>
+            <View style={styles.fieldContent}>
+              <Text style={styles.label}>
                 Email
               </Text>
 
-              <Text style={styles.infoValue}>
-                {email}
-              </Text>
+              {isEditing ? (
+                <TextInput
+                  style={styles.input}
+                  value={tempEmail}
+                  onChangeText={setTempEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  placeholder="Enter email"
+                />
+              ) : (
+                <Text style={styles.value}>
+                  {email}
+                </Text>
+              )}
             </View>
           </View>
 
           {/* Phone */}
-          <View style={styles.infoRow}>
-            <View style={styles.infoIcon}>
+          <View style={styles.fieldContainer}>
+            <View style={styles.iconContainer}>
               <Ionicons
                 name="call-outline"
                 size={21}
@@ -396,209 +223,138 @@ export default function ProfileScreen({ navigation }) {
               />
             </View>
 
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>
-                Phone
+            <View style={styles.fieldContent}>
+              <Text style={styles.label}>
+                Phone Number
               </Text>
 
-              <Text style={styles.infoValue}>
-                {phone}
-              </Text>
+              {isEditing ? (
+                <TextInput
+                  style={styles.input}
+                  value={tempPhone}
+                  onChangeText={setTempPhone}
+                  keyboardType="phone-pad"
+                  placeholder="Enter phone number"
+                />
+              ) : (
+                <Text style={styles.value}>
+                  {phone}
+                </Text>
+              )}
             </View>
           </View>
 
         </View>
 
-        {/* Academic Information */}
-        <Text style={styles.sectionTitle}>
-          Academic Information
-        </Text>
+        {/* Edit Buttons */}
+        {isEditing && (
+          <View style={styles.actionContainer}>
 
-        <View style={styles.statsContainer}>
-
-          <View style={styles.statCard}>
-            <View style={styles.statIcon}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={cancelEditing}
+            >
               <Ionicons
-                name="school-outline"
-                size={25}
+                name="close-outline"
+                size={20}
+                color="#555"
+              />
+
+              <Text style={styles.cancelText}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={saveProfile}
+            >
+              <Ionicons
+                name="checkmark-outline"
+                size={20}
+                color="#FFFFFF"
+              />
+
+              <Text style={styles.saveText}>
+                Save Changes
+              </Text>
+            </TouchableOpacity>
+
+          </View>
+        )}
+
+        {/* Student Information */}
+        <View style={styles.card}>
+
+          <Text style={styles.cardTitle}>
+            Student Information
+          </Text>
+
+          <View style={styles.infoRow}>
+            <View style={styles.infoIcon}>
+              <Ionicons
+                name="id-card-outline"
+                size={22}
                 color="#6C63FF"
               />
             </View>
 
-            <Text style={styles.statNumber}>
-              3rd
-            </Text>
+            <View>
+              <Text style={styles.label}>
+                Student ID
+              </Text>
 
-            <Text style={styles.statLabel}>
-              Year
-            </Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <View style={styles.statIcon}>
-              <Ionicons
-                name="book-outline"
-                size={25}
-                color="#6C63FF"
-              />
+              <Text style={styles.value}>
+                CC2026
+              </Text>
             </View>
-
-            <Text style={styles.statNumber}>
-              2-1
-            </Text>
-
-            <Text style={styles.statLabel}>
-              Semester
-            </Text>
           </View>
 
-          <View style={styles.statCard}>
-            <View style={styles.statIcon}>
-              <Ionicons
-                name="checkmark-circle-outline"
-                size={25}
-                color="#6C63FF"
-              />
-            </View>
-
-            <Text style={styles.statNumber}>
-              82%
-            </Text>
-
-            <Text style={styles.statLabel}>
-              Attendance
-            </Text>
-          </View>
-
-        </View>
-
-        {/* Quick Options */}
-        <Text style={styles.sectionTitle}>
-          Quick Options
-        </Text>
-
-        <View style={styles.optionsCard}>
-
-          {/* Events */}
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={() =>
-              navigation.navigate("Event")
-            }
-          >
-            <View style={styles.optionIcon}>
+          <View style={styles.infoRow}>
+            <View style={styles.infoIcon}>
               <Ionicons
                 name="calendar-outline"
-                size={23}
+                size={22}
                 color="#6C63FF"
               />
             </View>
 
-            <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>
-                My Events
+            <View>
+              <Text style={styles.label}>
+                Year
               </Text>
 
-              <Text style={styles.optionSubtitle}>
-                View upcoming college events
+              <Text style={styles.value}>
+                3rd Year
               </Text>
             </View>
+          </View>
 
-            <Ionicons
-              name="chevron-forward-outline"
-              size={20}
-              color="#999"
-            />
-          </TouchableOpacity>
-
-          {/* Notices */}
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={() =>
-              navigation.navigate("Notice")
-            }
-          >
-            <View style={styles.optionIcon}>
+          <View style={styles.infoRow}>
+            <View style={styles.infoIcon}>
               <Ionicons
-                name="notifications-outline"
-                size={23}
+                name="book-outline"
+                size={22}
                 color="#6C63FF"
               />
             </View>
 
-            <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>
-                Notices
+            <View>
+              <Text style={styles.label}>
+                Course
               </Text>
 
-              <Text style={styles.optionSubtitle}>
-                Check latest college notices
-              </Text>
-            </View>
-
-            <Ionicons
-              name="chevron-forward-outline"
-              size={20}
-              color="#999"
-            />
-          </TouchableOpacity>
-
-          {/* Settings */}
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={() =>
-              navigation.navigate("Settings")
-            }
-          >
-            <View style={styles.optionIcon}>
-              <Ionicons
-                name="settings-outline"
-                size={23}
-                color="#6C63FF"
-              />
-            </View>
-
-            <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>
-                Settings
-              </Text>
-
-              <Text style={styles.optionSubtitle}>
-                Manage app preferences
+              <Text style={styles.value}>
+                B.Tech CSE
               </Text>
             </View>
-
-            <Ionicons
-              name="chevron-forward-outline"
-              size={20}
-              color="#999"
-            />
-          </TouchableOpacity>
+          </View>
 
         </View>
 
-        {/* Logout */}
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
-        >
-          <Ionicons
-            name="log-out-outline"
-            size={22}
-            color="#D32F2F"
-          />
-
-          <Text style={styles.logoutText}>
-            Logout
-          </Text>
-        </TouchableOpacity>
-
+        {/* Footer */}
         <Text style={styles.footer}>
-          Campus Connect
-        </Text>
-
-        <Text style={styles.version}>
-          Version 1.0.0
+          Campus Connect • Student Profile
         </Text>
 
       </ScrollView>
@@ -622,25 +378,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  headerSmall: {
-    color: "#E8E7FF",
-    fontSize: 12,
-  },
-
   headerTitle: {
     color: "#FFFFFF",
     fontSize: 27,
     fontWeight: "bold",
-    marginTop: 3,
   },
 
-  headerIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  editButton: {
     backgroundColor: "#FFFFFF",
-    justifyContent: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    flexDirection: "row",
     alignItems: "center",
+  },
+
+  editText: {
+    color: "#6C63FF",
+    fontWeight: "bold",
+    marginLeft: 5,
   },
 
   content: {
@@ -648,155 +404,140 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  profileCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 22,
+  profileSection: {
     alignItems: "center",
-    elevation: 4,
-    marginBottom: 22,
+    marginVertical: 20,
   },
 
-  profileImage: {
-    width: 105,
-    height: 105,
-    borderRadius: 53,
-    backgroundColor: "#EEEDFF",
-    justifyContent: "center",
+  avatar: {
+    width: 95,
+    height: 95,
+    borderRadius: 48,
+    backgroundColor: "#6C63FF",
     alignItems: "center",
-    marginBottom: 12,
+    justifyContent: "center",
+    elevation: 5,
+  },
+
+  avatarText: {
+    color: "#FFFFFF",
+    fontSize: 38,
+    fontWeight: "bold",
   },
 
   profileName: {
-    fontSize: 24,
+    fontSize: 23,
     fontWeight: "bold",
     color: "#333",
+    marginTop: 12,
   },
 
-  profileRole: {
+  profileDepartment: {
+    color: "#888",
     fontSize: 13,
-    color: "#666",
-    marginTop: 5,
+    marginTop: 4,
     textAlign: "center",
   },
 
-  profileCollege: {
-    fontSize: 12,
-    color: "#888",
-    marginTop: 3,
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 16,
+    elevation: 3,
   },
 
-  editButton: {
-    marginTop: 15,
-    backgroundColor: "#6C63FF",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 18,
+  },
+
+  fieldContainer: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 18,
   },
 
-  editButtonText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "bold",
-    marginLeft: 7,
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#EEEDFF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
   },
 
-  editButtonsContainer: {
+  fieldContent: {
+    flex: 1,
+  },
+
+  label: {
+    fontSize: 12,
+    color: "#999",
+    marginBottom: 4,
+  },
+
+  value: {
+    fontSize: 15,
+    color: "#333",
+    fontWeight: "600",
+  },
+
+  input: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#6C63FF",
+    paddingVertical: 4,
+    fontSize: 15,
+    color: "#333",
+  },
+
+  actionContainer: {
     flexDirection: "row",
-    marginTop: 15,
-    gap: 10,
+    justifyContent: "space-between",
+    marginBottom: 16,
   },
 
   cancelButton: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#D32F2F",
-    flexDirection: "row",
+    flex: 1,
+    height: 52,
+    borderRadius: 12,
+    backgroundColor: "#E8E8E8",
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    marginRight: 7,
   },
 
-  cancelButtonText: {
-    color: "#D32F2F",
-    fontSize: 13,
+  cancelText: {
+    color: "#555",
     fontWeight: "bold",
     marginLeft: 5,
   },
 
   saveButton: {
+    flex: 1,
+    height: 52,
+    borderRadius: 12,
     backgroundColor: "#6C63FF",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
-    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    marginLeft: 7,
   },
 
-  saveButtonText: {
+  saveText: {
     color: "#FFFFFF",
-    fontSize: 13,
     fontWeight: "bold",
     marginLeft: 5,
-  },
-
-  sectionTitle: {
-    fontSize: 19,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 12,
-  },
-
-  formCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 17,
-    padding: 16,
-    marginBottom: 22,
-    elevation: 3,
-  },
-
-  inputContainer: {
-    marginBottom: 15,
-  },
-
-  inputLabel: {
-    fontSize: 12,
-    color: "#555",
-    fontWeight: "bold",
-    marginBottom: 7,
-  },
-
-  inputWrapper: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: "#DDD",
-    borderRadius: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-  },
-
-  input: {
-    flex: 1,
-    marginLeft: 9,
-    color: "#333",
-    fontSize: 14,
-  },
-
-  infoCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 17,
-    paddingHorizontal: 15,
-    marginBottom: 22,
-    elevation: 3,
   },
 
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 70,
+    marginBottom: 18,
   },
 
   infoIcon: {
@@ -804,135 +545,15 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 12,
     backgroundColor: "#EEEDFF",
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
     marginRight: 12,
-  },
-
-  infoContent: {
-    flex: 1,
-  },
-
-  infoLabel: {
-    fontSize: 11,
-    color: "#999",
-  },
-
-  infoValue: {
-    fontSize: 14,
-    color: "#333",
-    fontWeight: "600",
-    marginTop: 3,
-  },
-
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 22,
-  },
-
-  statCard: {
-    width: "31%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 15,
-    alignItems: "center",
-    elevation: 3,
-  },
-
-  statIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#EEEDFF",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-
-  statNumber: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-  },
-
-  statLabel: {
-    fontSize: 11,
-    color: "#888",
-    marginTop: 3,
-  },
-
-  optionsCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 17,
-    paddingHorizontal: 15,
-    marginBottom: 20,
-    elevation: 3,
-  },
-
-  optionRow: {
-    minHeight: 75,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  optionIcon: {
-    width: 45,
-    height: 45,
-    borderRadius: 13,
-    backgroundColor: "#EEEDFF",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-
-  optionContent: {
-    flex: 1,
-  },
-
-  optionTitle: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "#333",
-  },
-
-  optionSubtitle: {
-    fontSize: 11,
-    color: "#888",
-    marginTop: 4,
-  },
-
-  logoutButton: {
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#D32F2F",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 2,
-  },
-
-  logoutText: {
-    color: "#D32F2F",
-    fontSize: 15,
-    fontWeight: "bold",
-    marginLeft: 8,
   },
 
   footer: {
     textAlign: "center",
-    color: "#777",
-    fontSize: 13,
-    fontWeight: "bold",
-    marginTop: 25,
-  },
-
-  version: {
-    textAlign: "center",
-    color: "#AAA",
-    fontSize: 11,
-    marginTop: 4,
+    color: "#999",
+    fontSize: 12,
+    marginTop: 5,
   },
 });
