@@ -17,51 +17,20 @@ export default function HomeScreen({ navigation }) {
     {
       id: 1,
       title: "React Native Workshop",
-      description:
-        "Learn React Native development with practical examples.",
+      description: "Learn React Native development.",
       icon: "code-slash-outline",
     },
     {
       id: 2,
-      title: "Hackathon",
-      description:
-        "Participate in the upcoming college hackathon.",
-      icon: "trophy-outline",
-    },
-    {
-      id: 3,
       title: "Placement Drive",
-      description:
-        "New placement opportunities are available.",
+      description: "New placement opportunities available.",
       icon: "briefcase-outline",
     },
     {
-      id: 4,
-      title: "Exams",
-      description:
-        "Semester examinations are scheduled soon.",
-      icon: "book-outline",
-    },
-  ];
-
-  const events = [
-    {
-      id: 1,
-      title: "Technical Fest",
-      date: "September 5, 2026",
-      icon: "calendar-outline",
-    },
-    {
-      id: 2,
-      title: "Coding Contest",
-      date: "September 10, 2026",
-      icon: "code-outline",
-    },
-    {
       id: 3,
-      title: "Cultural Event",
-      date: "September 15, 2026",
-      icon: "musical-notes-outline",
+      title: "Hackathon",
+      description: "Participate in the upcoming hackathon.",
+      icon: "trophy-outline",
     },
   ];
 
@@ -71,11 +40,11 @@ export default function HomeScreen({ navigation }) {
       .includes(searchText.toLowerCase())
   );
 
-  const filteredEvents = events.filter((event) =>
-    event.title
-      .toLowerCase()
-      .includes(searchText.toLowerCase())
-  );
+  const openScreen = (screenName) => {
+    if (navigation) {
+      navigation.navigate(screenName);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -83,7 +52,7 @@ export default function HomeScreen({ navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.welcomeText}>
+          <Text style={styles.smallText}>
             Welcome back 👋
           </Text>
 
@@ -93,16 +62,20 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         <TouchableOpacity
-          style={styles.profileButton}
-          onPress={() =>
-            navigation.navigate("Profile")
-          }
+          style={styles.notificationButton}
+          onPress={() => alert("You have 3 notifications")}
         >
           <Ionicons
-            name="person"
-            size={25}
+            name="notifications-outline"
+            size={26}
             color="#6C63FF"
           />
+
+          <View style={styles.notificationBadge}>
+            <Text style={styles.badgeNumber}>
+              3
+            </Text>
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -111,17 +84,36 @@ export default function HomeScreen({ navigation }) {
         contentContainerStyle={styles.content}
       >
 
+        {/* Welcome Card */}
+        <View style={styles.welcomeCard}>
+          <View style={styles.welcomeContent}>
+            <Text style={styles.welcomeTitle}>
+              Hello, Student! 🎓
+            </Text>
+
+            <Text style={styles.welcomeText}>
+              Stay updated with your campus activities.
+            </Text>
+          </View>
+
+          <Ionicons
+            name="school-outline"
+            size={55}
+            color="#FFFFFF"
+          />
+        </View>
+
         {/* Search */}
-        <View style={styles.searchContainer}>
+        <View style={styles.searchBox}>
           <Ionicons
             name="search-outline"
-            size={23}
+            size={21}
             color="#777"
           />
 
           <TextInput
             style={styles.searchInput}
-            placeholder="Search notices or events..."
+            placeholder="Search notices..."
             placeholderTextColor="#999"
             value={searchText}
             onChangeText={setSearchText}
@@ -133,47 +125,25 @@ export default function HomeScreen({ navigation }) {
             >
               <Ionicons
                 name="close-circle"
-                size={22}
+                size={20}
                 color="#777"
               />
             </TouchableOpacity>
           )}
         </View>
 
-        {/* Welcome Card */}
-        <View style={styles.welcomeCard}>
-          <View style={styles.welcomeContent}>
-            <Text style={styles.welcomeTitle}>
-              Hello, Student! 🎓
-            </Text>
-
-            <Text style={styles.welcomeDescription}>
-              Stay updated with the latest college
-              notices and events.
-            </Text>
-          </View>
-
-          <Ionicons
-            name="school-outline"
-            size={60}
-            color="#FFFFFF"
-          />
-        </View>
-
         {/* Quick Actions */}
         <Text style={styles.sectionTitle}>
-          Quick Access
+          Quick Actions
         </Text>
 
-        <View style={styles.quickContainer}>
+        <View style={styles.quickActions}>
 
           <TouchableOpacity
-            style={styles.quickCard}
-            onPress={() =>
-              navigation.navigate("Notices")
-            }
+            style={styles.actionCard}
+            onPress={() => openScreen("Notice")}
           >
-            <View style={styles.quickIcon}>
+            <View style={styles.actionIcon}>
               <Ionicons
                 name="notifications-outline"
                 size={27}
@@ -181,18 +151,16 @@ export default function HomeScreen({ navigation }) {
               />
             </View>
 
-            <Text style={styles.quickTitle}>
+            <Text style={styles.actionText}>
               Notices
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.quickCard}
-            onPress={() =>
-              navigation.navigate("Events")
-            }
+            style={styles.actionCard}
+            onPress={() => openScreen("Event")}
           >
-            <View style={styles.quickIcon}>
+            <View style={styles.actionIcon}>
               <Ionicons
                 name="calendar-outline"
                 size={27}
@@ -200,18 +168,16 @@ export default function HomeScreen({ navigation }) {
               />
             </View>
 
-            <Text style={styles.quickTitle}>
+            <Text style={styles.actionText}>
               Events
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.quickCard}
-            onPress={() =>
-              navigation.navigate("Profile")
-            }
+            style={styles.actionCard}
+            onPress={() => openScreen("Profile")}
           >
-            <View style={styles.quickIcon}>
+            <View style={styles.actionIcon}>
               <Ionicons
                 name="person-outline"
                 size={27}
@@ -219,23 +185,38 @@ export default function HomeScreen({ navigation }) {
               />
             </View>
 
-            <Text style={styles.quickTitle}>
+            <Text style={styles.actionText}>
               Profile
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => alert("More features coming soon")}
+          >
+            <View style={styles.actionIcon}>
+              <Ionicons
+                name="apps-outline"
+                size={27}
+                color="#6C63FF"
+              />
+            </View>
+
+            <Text style={styles.actionText}>
+              More
             </Text>
           </TouchableOpacity>
 
         </View>
 
-        {/* Notices */}
+        {/* Latest Notices */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>
             Latest Notices
           </Text>
 
           <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("Notices")
-            }
+            onPress={() => openScreen("Notice")}
           >
             <Text style={styles.viewAll}>
               View All
@@ -243,14 +224,14 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
+        {/* Notice Cards */}
         {filteredNotices.length > 0 ? (
           filteredNotices.map((notice) => (
             <TouchableOpacity
               key={notice.id}
               style={styles.noticeCard}
-              onPress={() =>
-                navigation.navigate("Notices")
-              }
+              activeOpacity={0.8}
+              onPress={() => openScreen("Notice")}
             >
               <View style={styles.noticeIcon}>
                 <Ionicons
@@ -267,7 +248,7 @@ export default function HomeScreen({ navigation }) {
 
                 <Text
                   style={styles.noticeDescription}
-                  numberOfLines={2}
+                  numberOfLines={1}
                 >
                   {notice.description}
                 </Text>
@@ -281,11 +262,11 @@ export default function HomeScreen({ navigation }) {
             </TouchableOpacity>
           ))
         ) : (
-          <View style={styles.emptyCard}>
+          <View style={styles.emptyBox}>
             <Ionicons
               name="search-outline"
               size={40}
-              color="#999"
+              color="#AAA"
             />
 
             <Text style={styles.emptyText}>
@@ -294,79 +275,73 @@ export default function HomeScreen({ navigation }) {
           </View>
         )}
 
-        {/* Events */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            Upcoming Events
-          </Text>
+        {/* Upcoming Event */}
+        <Text style={styles.sectionTitle}>
+          Upcoming Event
+        </Text>
 
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("Events")
-            }
-          >
-            <Text style={styles.viewAll}>
-              View All
+        <TouchableOpacity
+          style={styles.eventCard}
+          onPress={() => openScreen("Event")}
+          activeOpacity={0.8}
+        >
+          <View style={styles.eventDate}>
+            <Text style={styles.eventDay}>
+              05
             </Text>
-          </TouchableOpacity>
-        </View>
 
-        {filteredEvents.length > 0 ? (
-          filteredEvents.map((event) => (
-            <TouchableOpacity
-              key={event.id}
-              style={styles.eventCard}
-              onPress={() =>
-                navigation.navigate("Events")
-              }
-            >
-              <View style={styles.eventIcon}>
-                <Ionicons
-                  name={event.icon}
-                  size={26}
-                  color="#6C63FF"
-                />
-              </View>
-
-              <View style={styles.eventContent}>
-                <Text style={styles.eventTitle}>
-                  {event.title}
-                </Text>
-
-                <Text style={styles.eventDate}>
-                  {event.date}
-                </Text>
-              </View>
-
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color="#999"
-              />
-            </TouchableOpacity>
-          ))
-        ) : (
-          <View style={styles.emptyCard}>
-            <Ionicons
-              name="calendar-outline"
-              size={40}
-              color="#999"
-            />
-
-            <Text style={styles.emptyText}>
-              No events found
+            <Text style={styles.eventMonth}>
+              SEP
             </Text>
           </View>
-        )}
+
+          <View style={styles.eventContent}>
+            <Text style={styles.eventTitle}>
+              Technical Fest
+            </Text>
+
+            <View style={styles.eventInfo}>
+              <Ionicons
+                name="time-outline"
+                size={14}
+                color="#777"
+              />
+
+              <Text style={styles.eventText}>
+                10:00 AM
+              </Text>
+            </View>
+
+            <View style={styles.eventInfo}>
+              <Ionicons
+                name="location-outline"
+                size={14}
+                color="#777"
+              />
+
+              <Text style={styles.eventText}>
+                College Auditorium
+              </Text>
+            </View>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color="#999"
+          />
+        </TouchableOpacity>
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerTitle}>
-            Campus Connect
-          </Text>
+          <Ionicons
+            name="heart-outline"
+            size={16}
+            color="#999"
+          />
 
           <Text style={styles.footerText}>
-            Stay connected with your campus.
+            Campus Connect • Stay Connected
           </Text>
         </View>
 
@@ -384,55 +359,55 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#6C63FF",
     paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 22,
     paddingHorizontal: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
 
-  welcomeText: {
-    color: "#E7E5FF",
+  smallText: {
+    color: "#E5E3FF",
     fontSize: 13,
   },
 
   headerTitle: {
     color: "#FFFFFF",
-    fontSize: 26,
+    fontSize: 25,
     fontWeight: "bold",
     marginTop: 4,
   },
 
-  profileButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  notificationButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
   },
 
+  notificationBadge: {
+    position: "absolute",
+    right: 3,
+    top: 2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#FF4D67",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  badgeNumber: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+
   content: {
     padding: 16,
     paddingBottom: 40,
-  },
-
-  searchContainer: {
-    height: 52,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    marginBottom: 18,
-    elevation: 3,
-  },
-
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: "#333",
-    marginLeft: 10,
   },
 
   welcomeCard: {
@@ -442,7 +417,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 22,
+    marginBottom: 18,
+    elevation: 4,
   },
 
   welcomeContent: {
@@ -453,82 +429,99 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 7,
   },
 
-  welcomeDescription: {
+  welcomeText: {
     color: "#E7E5FF",
-    fontSize: 13,
-    lineHeight: 19,
-    paddingRight: 10,
+    fontSize: 12,
+    marginTop: 7,
+    lineHeight: 18,
+  },
+
+  searchBox: {
+    height: 52,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 15,
+    marginBottom: 22,
+    elevation: 2,
+  },
+
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: "#333",
+    marginLeft: 10,
   },
 
   sectionTitle: {
     fontSize: 19,
     fontWeight: "bold",
     color: "#333",
-  },
-
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     marginBottom: 12,
-    marginTop: 8,
   },
 
-  viewAll: {
-    color: "#6C63FF",
-    fontWeight: "bold",
-    fontSize: 13,
-  },
-
-  quickContainer: {
+  quickActions: {
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-between",
-    marginTop: 12,
     marginBottom: 22,
   },
 
-  quickCard: {
-    width: "31%",
+  actionCard: {
+    width: "48%",
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
+    padding: 15,
     alignItems: "center",
-    paddingVertical: 16,
-    elevation: 3,
+    marginBottom: 12,
+    elevation: 2,
   },
 
-  quickIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+  actionIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 15,
     backgroundColor: "#EEEDFF",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
   },
 
-  quickTitle: {
+  actionText: {
+    color: "#444",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  viewAll: {
+    color: "#6C63FF",
     fontSize: 13,
     fontWeight: "bold",
-    color: "#444",
   },
 
   noticeCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    padding: 15,
+    padding: 14,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 11,
     elevation: 2,
   },
 
   noticeIcon: {
     width: 48,
     height: 48,
-    borderRadius: 13,
+    borderRadius: 14,
     backgroundColor: "#EEEDFF",
     alignItems: "center",
     justifyContent: "center",
@@ -540,36 +533,61 @@ const styles = StyleSheet.create({
   },
 
   noticeTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 4,
   },
 
   noticeDescription: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#888",
-    lineHeight: 17,
+    marginTop: 5,
+  },
+
+  emptyBox: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 30,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+
+  emptyText: {
+    color: "#999",
+    fontSize: 13,
+    marginTop: 8,
   },
 
   eventCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: 17,
     padding: 15,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 20,
     elevation: 2,
   },
 
-  eventIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 13,
+  eventDate: {
+    width: 55,
+    height: 62,
+    borderRadius: 14,
     backgroundColor: "#EEEDFF",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
+  },
+
+  eventDay: {
+    color: "#6C63FF",
+    fontSize: 22,
+    fontWeight: "bold",
+  },
+
+  eventMonth: {
+    color: "#6C63FF",
+    fontSize: 10,
+    fontWeight: "bold",
   },
 
   eventContent: {
@@ -578,44 +596,33 @@ const styles = StyleSheet.create({
 
   eventTitle: {
     fontSize: 15,
-    fontWeight: "bold",
     color: "#333",
+    fontWeight: "bold",
+    marginBottom: 5,
   },
 
-  eventDate: {
-    fontSize: 12,
-    color: "#888",
-    marginTop: 5,
-  },
-
-  emptyCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 25,
+  eventInfo: {
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15,
+    marginTop: 3,
   },
 
-  emptyText: {
+  eventText: {
+    fontSize: 11,
     color: "#888",
-    fontSize: 14,
-    marginTop: 8,
+    marginLeft: 5,
   },
 
   footer: {
+    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
-    marginTop: 20,
-  },
-
-  footerTitle: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "#777",
+    marginTop: 5,
   },
 
   footerText: {
-    fontSize: 12,
     color: "#999",
-    marginTop: 4,
+    fontSize: 11,
+    marginLeft: 5,
   },
 });
