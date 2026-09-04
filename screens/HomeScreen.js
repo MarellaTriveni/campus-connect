@@ -39,6 +39,13 @@ export default function HomeScreen({ navigation }) {
       .toLowerCase()
       .includes(searchText.toLowerCase())
   );
+  <TouchableOpacity
+    style={styles.quickButton}
+    onPress={() => navigation.navigate("Saved")}
+  >
+    <Ionicons name="bookmark" size={24} color="#6C63FF" />
+    <Text style={styles.quickButtonText}>Saved</Text>
+  </TouchableOpacity>
 
   const openScreen = (screenName) => {
     if (navigation) {
