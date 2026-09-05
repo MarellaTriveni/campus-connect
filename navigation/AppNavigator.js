@@ -6,6 +6,9 @@ import StudentRegistration from "../screens/StudentRegistration";
 import BottomTabs from "./BottomTabs";
 import SettingsScreen from "../screens/SettingsScreen";
 import SavedScreen from "../screens/SavedScreen";
+import NotificationScreen from "../screens/NotificationScreen";
+import NoticeScreen  from "../screens/NoticeScreen";
+
 
 const Stack = createNativeStackNavigator();
 
@@ -33,6 +36,18 @@ export default function AppNavigator() {
       <Stack.Screen
         name="Settings"
         component={SettingsScreen}
+      />
+      <Stack.Screen
+        name="Saved"
+        component={SavedScreen}
+      />
+      <Stack.Screen
+        name="Notifications"
+        component={NotificationScreen}
+      />
+      <Stack.Screen
+        name="Notices"
+        component={NoticeScreen}
       />
     </Stack.Navigator>
   );
