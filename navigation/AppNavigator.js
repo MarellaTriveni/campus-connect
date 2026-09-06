@@ -8,6 +8,7 @@ import SettingsScreen from "../screens/SettingsScreen";
 import SavedScreen from "../screens/SavedScreen";
 import NotificationScreen from "../screens/NotificationScreen";
 import NoticeScreen  from "../screens/NoticeScreen";
+import EventScreen from "../screens/EventScreen";
 
 
 const Stack = createNativeStackNavigator();
@@ -49,6 +50,10 @@ export default function AppNavigator() {
         name="Notices"
         component={NoticeScreen}
       />
+      <Stack.Screen
+       name="Event"
+       component={EventScreen}
+       />
     </Stack.Navigator>
   );
 }

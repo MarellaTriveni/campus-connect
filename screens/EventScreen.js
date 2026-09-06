@@ -3,92 +3,66 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   TextInput,
+  TouchableOpacity,
+  FlatList,
   Alert,
 } from "react-native";
-
 import { Ionicons } from "@expo/vector-icons";
 
-export default function EventScreen() {
-  const [searchText, setSearchText] = useState("");
+const EventScreen = ({ navigation }) => {
+  const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  const events = [
-    {
-      id: 1,
-      title: "Technical Fest",
-      date: "September 5, 2026",
-      time: "10:00 AM",
-      location: "College Auditorium",
-      category: "Technical",
-      icon: "laptop-outline",
-      description:
-        "A technical festival with coding, project exhibitions and technical activities.",
-    },
-    {
-      id: 2,
-      title: "Coding Contest",
-      date: "September 10, 2026",
-      time: "11:00 AM",
-      location: "Computer Lab",
-      category: "Technical",
-      icon: "code-slash-outline",
-      description:
-        "Test your programming skills by participating in the coding contest.",
-    },
-    {
-      id: 3,
-      title: "Cultural Event",
-      date: "September 15, 2026",
-      time: "2:00 PM",
-      location: "College Ground",
-      category: "Cultural",
-      icon: "musical-notes-outline",
-      description:
-        "Enjoy music, dance and cultural performances by students.",
-    },
-    {
-      id: 4,
-      title: "Sports Meet",
-      date: "September 20, 2026",
-      time: "9:00 AM",
-      location: "Sports Ground",
-      category: "Sports",
-      icon: "football-outline",
-      description:
-        "Annual sports meet with different games and competitions.",
-    },
-    {
-      id: 5,
-      title: "Career Guidance",
-      date: "September 25, 2026",
-      time: "10:30 AM",
-      location: "Seminar Hall",
-      category: "Career",
-      icon: "briefcase-outline",
-      description:
-        "Career guidance session to help students understand job opportunities.",
-    },
-  ];
+  const categories = ["All", "Workshop", "Technical", "Cultural", "Sports"];
 
-  const categories = [
-    "All",
-    "Technical",
-    "Cultural",
-    "Sports",
-    "Career",
-  ];
+  const [events] = useState([
+    {
+      id: "1",
+      title: "React Native Workshop",
+      category: "Workshop",
+      date: "10 September 2026",
+      time: "10:00 AM",
+      venue: "Seminar Hall",
+      description:
+        "Learn the basics of React Native and build mobile applications.",
+    },
+    {
+      id: "2",
+      title: "Coding Contest",
+      category: "Technical",
+      date: "15 September 2026",
+      time: "11:00 AM",
+      venue: "Computer Lab",
+      description:
+        "Participate in a coding contest and improve your programming skills.",
+    },
+    {
+      id: "3",
+      title: "Cultural Fest",
+      category: "Cultural",
+      date: "20 September 2026",
+      time: "5:00 PM",
+      venue: "College Auditorium",
+      description:
+        "Enjoy music, dance and other cultural activities.",
+    },
+    {
+      id: "4",
+      title: "Inter College Sports Meet",
+      category: "Sports",
+      date: "25 September 2026",
+      time: "9:00 AM",
+      venue: "College Ground",
+      description:
+        "Participate in different sports competitions.",
+    },
+  ]);
 
   const filteredEvents = events.filter((event) => {
     const matchesSearch =
-      event.title
-        .toLowerCase()
-        .includes(searchText.toLowerCase()) ||
-      event.description
-        .toLowerCase()
-        .includes(searchText.toLowerCase());
+      event.title.toLowerCase().includes(search.toLowerCase()) ||
+      event.description.toLowerCase().includes(search.toLowerCase());
 
     const matchesCategory =
       selectedCategory === "All" ||
@@ -100,304 +74,190 @@ export default function EventScreen() {
   const showEventDetails = (event) => {
     Alert.alert(
       event.title,
-      `📅 Date: ${event.date}\n\n` +
-        `⏰ Time: ${event.time}\n\n` +
-        `📍 Location: ${event.location}\n\n` +
-        `🏷️ Category: ${event.category}\n\n` +
-        `${event.description}`,
-      [{ text: "OK" }]
+      `Category: ${event.category}\n\nDate: ${event.date}\nTime: ${event.time}\nVenue: ${event.venue}\n\n${event.description}`,
+      [
+        {
+          text: "Register",
+          onPress: () =>
+            Alert.alert(
+              "Registration",
+              `You have registered for ${event.title}`
+            ),
+        },
+        {
+          text: "Close",
+          style: "cancel",
+        },
+      ]
     );
   };
+
+  const renderEvent = ({ item }) => (
+    <TouchableOpacity
+      style={styles.eventCard}
+      onPress={() => showEventDetails(item)}
+    >
+      <View style={styles.iconBox}>
+        <Ionicons name="calendar" size={28} color="#6C63FF" />
+      </View>
+
+      <View style={styles.eventContent}>
+        <Text style={styles.eventTitle}>{item.title}</Text>
+
+        <Text style={styles.category}>
+          {item.category}
+        </Text>
+
+        <View style={styles.infoRow}>
+          <Ionicons name="calendar-outline" size={16} color="#555" />
+          <Text style={styles.infoText}>{item.date}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Ionicons name="location-outline" size={16} color="#555" />
+          <Text style={styles.infoText}>{item.venue}</Text>
+        </View>
+      </View>
+
+      <Ionicons
+        name="chevron-forward"
+        size={22}
+        color="#777"
+      />
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
 
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.smallTitle}>
-            Campus Connect
-          </Text>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={26} color="white" />
+        </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>
-            Events 📅
-          </Text>
-        </View>
+        <Text style={styles.headerTitle}>Events</Text>
 
-        <View style={styles.headerIcon}>
-          <Ionicons
-            name="calendar"
-            size={27}
-            color="#6C63FF"
-          />
-        </View>
+        <Ionicons name="calendar-outline" size={26} color="white" />
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
+      {/* Search */}
+      <View style={styles.searchBox}>
+        <Ionicons name="search" size={20} color="#777" />
 
-        {/* Search */}
-        <View style={styles.searchBox}>
-          <Ionicons
-            name="search-outline"
-            size={22}
-            color="#777"
-          />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search events..."
+          value={search}
+          onChangeText={setSearch}
+        />
+      </View>
 
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search events..."
-            placeholderTextColor="#999"
-            value={searchText}
-            onChangeText={setSearchText}
-          />
-
-          {searchText.length > 0 && (
-            <TouchableOpacity
-              onPress={() => setSearchText("")}
-            >
-              <Ionicons
-                name="close-circle"
-                size={21}
-                color="#777"
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Categories */}
-        <Text style={styles.categoryTitle}>
-          Event Categories
-        </Text>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoryScroll}
-        >
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category}
+      {/* Categories */}
+      <FlatList
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        data={categories}
+        keyExtractor={(item) => item}
+        contentContainerStyle={styles.categoryList}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={[
+              styles.categoryButton,
+              selectedCategory === item &&
+                styles.selectedCategory,
+            ]}
+            onPress={() => setSelectedCategory(item)}
+          >
+            <Text
               style={[
-                styles.categoryButton,
-                selectedCategory === category &&
-                  styles.selectedCategory,
+                styles.categoryText,
+                selectedCategory === item &&
+                  styles.selectedCategoryText,
               ]}
-              onPress={() =>
-                setSelectedCategory(category)
-              }
             >
-              <Text
-                style={[
-                  styles.categoryText,
-                  selectedCategory === category &&
-                    styles.selectedCategoryText,
-                ]}
-              >
-                {category}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+              {item}
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
 
-        {/* Result */}
-        <View style={styles.resultRow}>
-          <Text style={styles.sectionTitle}>
-            Upcoming Events
-          </Text>
-
-          <Text style={styles.resultCount}>
-            {filteredEvents.length} found
-          </Text>
-        </View>
-
-        {/* Event Cards */}
-        {filteredEvents.length > 0 ? (
-          filteredEvents.map((event) => (
-            <TouchableOpacity
-              key={event.id}
-              style={styles.eventCard}
-              activeOpacity={0.8}
-              onPress={() =>
-                showEventDetails(event)
-              }
-            >
-
-              {/* Event Icon */}
-              <View style={styles.iconBox}>
-                <Ionicons
-                  name={event.icon}
-                  size={28}
-                  color="#6C63FF"
-                />
-              </View>
-
-              {/* Event Content */}
-              <View style={styles.eventContent}>
-
-                <View style={styles.titleRow}>
-                  <Text style={styles.eventTitle}>
-                    {event.title}
-                  </Text>
-
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>
-                      {event.category}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.infoRow}>
-                  <Ionicons
-                    name="calendar-outline"
-                    size={14}
-                    color="#777"
-                  />
-
-                  <Text style={styles.infoText}>
-                    {event.date}
-                  </Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                  <Ionicons
-                    name="location-outline"
-                    size={14}
-                    color="#777"
-                  />
-
-                  <Text style={styles.infoText}>
-                    {event.location}
-                  </Text>
-                </View>
-
-              </View>
-
-              <Ionicons
-                name="chevron-forward"
-                size={21}
-                color="#999"
-              />
-
-            </TouchableOpacity>
-          ))
-        ) : (
+      {/* Events */}
+      <FlatList
+        data={filteredEvents}
+        keyExtractor={(item) => item.id}
+        renderItem={renderEvent}
+        contentContainerStyle={styles.eventList}
+        ListEmptyComponent={
           <View style={styles.emptyBox}>
             <Ionicons
               name="calendar-outline"
-              size={50}
+              size={60}
               color="#aaa"
             />
-
-            <Text style={styles.emptyTitle}>
-              No Events Found
-            </Text>
-
             <Text style={styles.emptyText}>
-              Try another search or category.
+              No events found
             </Text>
           </View>
-        )}
-
-        {/* Information */}
-        <View style={styles.infoBox}>
-          <Ionicons
-            name="information-circle-outline"
-            size={23}
-            color="#6C63FF"
-          />
-
-          <Text style={styles.infoBoxText}>
-            Tap an event to view complete details.
-          </Text>
-        </View>
-
-      </ScrollView>
+        }
+      />
     </View>
   );
-}
+};
+
+export default EventScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F6FA",
+    backgroundColor: "#F7F7FB",
   },
 
   header: {
+    height: 65,
     backgroundColor: "#6C63FF",
-    paddingTop: 50,
-    paddingBottom: 22,
-    paddingHorizontal: 20,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-  },
-
-  smallTitle: {
-    color: "#E5E3FF",
-    fontSize: 13,
+    justifyContent: "space-between",
+    paddingHorizontal: 18,
   },
 
   headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 28,
+    color: "white",
+    fontSize: 21,
     fontWeight: "bold",
-    marginTop: 3,
-  },
-
-  headerIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  content: {
-    padding: 16,
-    paddingBottom: 40,
   },
 
   searchBox: {
-    height: 52,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
+    backgroundColor: "white",
+    margin: 15,
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    height: 48,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 15,
-    elevation: 3,
-    marginBottom: 20,
+    elevation: 2,
   },
 
   searchInput: {
     flex: 1,
-    fontSize: 15,
-    color: "#333",
     marginLeft: 10,
+    fontSize: 15,
   },
 
-  categoryTitle: {
-    fontSize: 17,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 10,
-  },
-
-  categoryScroll: {
-    marginBottom: 20,
+  categoryList: {
+    paddingHorizontal: 15,
+    paddingBottom: 10,
   },
 
   categoryButton: {
-    paddingHorizontal: 17,
+    paddingHorizontal: 18,
     paddingVertical: 9,
     borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    marginRight: 10,
+    backgroundColor: "white",
+    marginRight: 8,
     borderWidth: 1,
-    borderColor: "#DDD",
+    borderColor: "#ddd",
   },
 
   selectedCategory: {
@@ -406,50 +266,35 @@ const styles = StyleSheet.create({
   },
 
   categoryText: {
-    fontSize: 13,
-    color: "#666",
-    fontWeight: "600",
+    color: "#555",
+    fontWeight: "500",
   },
 
   selectedCategoryText: {
-    color: "#FFFFFF",
+    color: "white",
   },
 
-  resultRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-  },
-
-  resultCount: {
-    fontSize: 12,
-    color: "#777",
+  eventList: {
+    padding: 15,
   },
 
   eventCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 17,
+    backgroundColor: "white",
+    borderRadius: 15,
     padding: 15,
+    marginBottom: 12,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
     elevation: 2,
   },
 
   iconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 15,
-    backgroundColor: "#EEEDFF",
-    alignItems: "center",
+    width: 55,
+    height: 55,
+    borderRadius: 12,
+    backgroundColor: "#EEEEFF",
     justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
 
@@ -457,79 +302,40 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-
   eventTitle: {
-    flex: 1,
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: "bold",
-    color: "#333",
+    color: "#222",
+    marginBottom: 5,
   },
 
-  badge: {
-    backgroundColor: "#EEEDFF",
-    paddingHorizontal: 7,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginLeft: 5,
-  },
-
-  badgeText: {
+  category: {
     color: "#6C63FF",
-    fontSize: 9,
-    fontWeight: "bold",
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 7,
   },
 
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 4,
+    marginTop: 3,
   },
 
   infoText: {
-    fontSize: 11,
-    color: "#888",
-    marginLeft: 5,
+    marginLeft: 6,
+    color: "#555",
+    fontSize: 13,
   },
 
   emptyBox: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 35,
     alignItems: "center",
-    marginTop: 10,
-  },
-
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#555",
-    marginTop: 12,
+    marginTop: 80,
   },
 
   emptyText: {
-    fontSize: 13,
-    color: "#999",
-    marginTop: 5,
-  },
-
-  infoBox: {
-    backgroundColor: "#EEEDFF",
-    borderRadius: 14,
-    padding: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-  },
-
-  infoBoxText: {
-    flex: 1,
-    fontSize: 12,
-    color: "#666",
-    marginLeft: 9,
+    marginTop: 10,
+    fontSize: 16,
+    color: "#777",
   },
 });

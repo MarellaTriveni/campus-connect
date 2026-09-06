@@ -67,6 +67,11 @@ export default function HomeScreen({ navigation }) {
           style={styles.notificationButton}
           onPress={() => openScreen("Notifications")}
         >
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Event")}
+          >
+            <Text>Events</Text>
+          </TouchableOpacity>
           <Ionicons
             name="notifications-outline"
             size={26}
