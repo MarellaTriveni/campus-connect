@@ -77,6 +77,22 @@ export default function HomeScreen({ navigation }) {
             size={26}
             color="#6C63FF"
           />
+          <TouchableOpacity
+            style={styles.quickButton}
+            onPress={() =>
+              navigation.navigate("MyRegistrations")
+            }
+          >
+            <Ionicons
+              name="clipboard-outline"
+              size={22}
+              color="#6C63FF"
+            />
+
+            <Text style={styles.quickButtonText}>
+              My Registrations
+            </Text>
+          </TouchableOpacity>
 
           {/* Notification Badge */}
           <View style={styles.badge}>
@@ -94,7 +110,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.welcomeCard}>
           <View style={styles.welcomeTextContainer}>
             <Text style={styles.welcomeTitle}>
-              Hello, Student! 🎓
+              Hello, Student! 
             </Text>
 
             <Text style={styles.welcomeDescription}>
