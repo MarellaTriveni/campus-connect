@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,28 +6,43 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const STORAGE_KEY = "my_registrations";
 
 const MyRegistrationsScreen = ({ navigation }) => {
-  const [registrations, setRegistrations] = useState([
-    {
-      id: "1",
-      title: "React Native Workshop",
-      category: "Workshop",
-      date: "10 September 2026",
-      time: "10:00 AM",
-      venue: "Seminar Hall",
-    },
-    {
-      id: "2",
-      title: "Coding Contest",
-      category: "Technical",
-      date: "15 September 2026",
-      time: "11:00 AM",
-      venue: "Computer Lab",
-    },
-  ]);
+  const [registrations, setRegistrations] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadRegistrations();
+  }, []);
+
+  const loadRegistrations = async () => {
+    try {
+      const savedData = await AsyncStorage.getItem(
+        STORAGE_KEY
+      );
+
+      if (savedData) {
+        setRegistrations(JSON.parse(savedData));
+      } else {
+        setRegistrations([]);
+      }
+    } catch (error) {
+      console.log(error);
+
+      Alert.alert(
+        "Error",
+        "Unable to load registrations."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const cancelRegistration = (id, title) => {
     Alert.alert(
@@ -40,15 +55,31 @@ const MyRegistrationsScreen = ({ navigation }) => {
         },
         {
           text: "Yes",
-          onPress: () => {
-            setRegistrations(
-              registrations.filter((item) => item.id !== id)
-            );
+          onPress: async () => {
+            try {
+              const updatedData = registrations.filter(
+                (item) => item.id !== id
+              );
 
-            Alert.alert(
-              "Cancelled",
-              "Registration cancelled successfully."
-            );
+              await AsyncStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(updatedData)
+              );
+
+              setRegistrations(updatedData);
+
+              Alert.alert(
+                "Cancelled",
+                "Registration cancelled successfully."
+              );
+            } catch (error) {
+              console.log(error);
+
+              Alert.alert(
+                "Error",
+                "Unable to cancel registration."
+              );
+            }
           },
         },
       ]
@@ -57,16 +88,21 @@ const MyRegistrationsScreen = ({ navigation }) => {
 
   const renderRegistration = ({ item }) => (
     <View style={styles.card}>
+
+      {/* NEW ICON */}
       <View style={styles.iconBox}>
         <Ionicons
-          name="calendar"
+          name="clipboard-outline"
           size={28}
           color="#6C63FF"
         />
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.title}>{item.title}</Text>
+
+        <Text style={styles.title}>
+          {item.title}
+        </Text>
 
         <Text style={styles.category}>
           {item.category}
@@ -78,6 +114,7 @@ const MyRegistrationsScreen = ({ navigation }) => {
             size={16}
             color="#555"
           />
+
           <Text style={styles.info}>
             {item.date}
           </Text>
@@ -89,6 +126,7 @@ const MyRegistrationsScreen = ({ navigation }) => {
             size={16}
             color="#555"
           />
+
           <Text style={styles.info}>
             {item.time}
           </Text>
@@ -100,6 +138,7 @@ const MyRegistrationsScreen = ({ navigation }) => {
             size={16}
             color="#555"
           />
+
           <Text style={styles.info}>
             {item.venue}
           </Text>
@@ -108,7 +147,10 @@ const MyRegistrationsScreen = ({ navigation }) => {
         <TouchableOpacity
           style={styles.cancelButton}
           onPress={() =>
-            cancelRegistration(item.id, item.title)
+            cancelRegistration(
+              item.id,
+              item.title
+            )
           }
         >
           <Ionicons
@@ -121,6 +163,7 @@ const MyRegistrationsScreen = ({ navigation }) => {
             Cancel Registration
           </Text>
         </TouchableOpacity>
+
       </View>
     </View>
   );
@@ -128,8 +171,9 @@ const MyRegistrationsScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
 
-      {/* Header */}
+      {/* HEADER */}
       <View style={styles.header}>
+
         <TouchableOpacity
           onPress={() => navigation.goBack()}
         >
@@ -145,47 +189,71 @@ const MyRegistrationsScreen = ({ navigation }) => {
         </Text>
 
         <View style={styles.countBox}>
+          <Ionicons
+            name="clipboard-outline"
+            size={15}
+            color="#6C63FF"
+          />
+
           <Text style={styles.countText}>
             {registrations.length}
           </Text>
         </View>
+
       </View>
 
-      {/* Registration List */}
-      <FlatList
-        data={registrations}
-        keyExtractor={(item) => item.id}
-        renderItem={renderRegistration}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons
-              name="calendar-outline"
-              size={70}
-              color="#aaa"
-            />
+      {loading ? (
+        <View style={styles.loadingContainer}>
 
-            <Text style={styles.emptyTitle}>
-              No Registrations
-            </Text>
+          <ActivityIndicator
+            size="large"
+            color="#6C63FF"
+          />
 
-            <Text style={styles.emptyText}>
-              You have not registered for any events yet.
-            </Text>
+          <Text style={styles.loadingText}>
+            Loading registrations...
+          </Text>
 
-            <TouchableOpacity
-              style={styles.eventButton}
-              onPress={() =>
-                navigation.navigate("Event")
-              }
-            >
-              <Text style={styles.eventButtonText}>
-                Browse Events
+        </View>
+      ) : (
+        <FlatList
+          data={registrations}
+          keyExtractor={(item) => item.id}
+          renderItem={renderRegistration}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+
+              <Ionicons
+                name="clipboard-outline"
+                size={70}
+                color="#aaa"
+              />
+
+              <Text style={styles.emptyTitle}>
+                No Registrations
               </Text>
-            </TouchableOpacity>
-          </View>
-        }
-      />
+
+              <Text style={styles.emptyText}>
+                You have not registered for any events yet.
+              </Text>
+
+              <TouchableOpacity
+                style={styles.eventButton}
+                onPress={() =>
+                  navigation.navigate("Event")
+                }
+              >
+                <Text style={styles.eventButtonText}>
+                  Browse Events
+                </Text>
+              </TouchableOpacity>
+
+            </View>
+          }
+        />
+      )}
+
     </View>
   );
 };
@@ -215,20 +283,24 @@ const styles = StyleSheet.create({
 
   countBox: {
     backgroundColor: "white",
-    width: 30,
+    minWidth: 45,
     height: 30,
     borderRadius: 15,
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 8,
   },
 
   countText: {
     color: "#6C63FF",
     fontWeight: "bold",
+    marginLeft: 4,
   },
 
   list: {
     padding: 15,
+    flexGrow: 1,
   },
 
   card: {
@@ -237,7 +309,7 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 15,
     flexDirection: "row",
-    elevation: 3,
+    elevation: 2,
   },
 
   iconBox: {
@@ -295,10 +367,23 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
 
-  emptyContainer: {
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    marginTop: 100,
+  },
+
+  loadingText: {
+    marginTop: 10,
+    color: "#666",
+  },
+
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 30,
+    minHeight: 500,
   },
 
   emptyTitle: {

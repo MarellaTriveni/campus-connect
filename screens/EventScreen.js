@@ -9,14 +9,23 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const STORAGE_KEY = "my_registrations";
 
 const EventScreen = ({ navigation }) => {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  const categories = ["All", "Workshop", "Technical", "Cultural", "Sports"];
+  const categories = [
+    "All",
+    "Workshop",
+    "Technical",
+    "Cultural",
+    "Sports",
+  ];
 
-  const [events] = useState([
+  const events = [
     {
       id: "1",
       title: "React Native Workshop",
@@ -25,7 +34,7 @@ const EventScreen = ({ navigation }) => {
       time: "10:00 AM",
       venue: "Seminar Hall",
       description:
-        "Learn the basics of React Native and build mobile applications.",
+        "Learn React Native and build mobile applications.",
     },
     {
       id: "2",
@@ -45,7 +54,7 @@ const EventScreen = ({ navigation }) => {
       time: "5:00 PM",
       venue: "College Auditorium",
       description:
-        "Enjoy music, dance and other cultural activities.",
+        "Enjoy music, dance and cultural activities.",
     },
     {
       id: "4",
@@ -57,7 +66,7 @@ const EventScreen = ({ navigation }) => {
       description:
         "Participate in different sports competitions.",
     },
-  ]);
+  ];
 
   const filteredEvents = events.filter((event) => {
     const matchesSearch =
@@ -71,6 +80,52 @@ const EventScreen = ({ navigation }) => {
     return matchesSearch && matchesCategory;
   });
 
+  const registerForEvent = async (event) => {
+    try {
+      const existingData = await AsyncStorage.getItem(
+        STORAGE_KEY
+      );
+
+      const registrations = existingData
+        ? JSON.parse(existingData)
+        : [];
+
+      const alreadyRegistered = registrations.some(
+        (item) => item.id === event.id
+      );
+
+      if (alreadyRegistered) {
+        Alert.alert(
+          "Already Registered",
+          `You are already registered for ${event.title}.`
+        );
+        return;
+      }
+
+      const updatedRegistrations = [
+        ...registrations,
+        event,
+      ];
+
+      await AsyncStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(updatedRegistrations)
+      );
+
+      Alert.alert(
+        "Registration Successful",
+        `You have successfully registered for ${event.title}.`
+      );
+    } catch (error) {
+      console.log(error);
+
+      Alert.alert(
+        "Error",
+        "Unable to register for the event."
+      );
+    }
+  };
+
   const showEventDetails = (event) => {
     Alert.alert(
       event.title,
@@ -78,11 +133,7 @@ const EventScreen = ({ navigation }) => {
       [
         {
           text: "Register",
-          onPress: () =>
-            Alert.alert(
-              "Registration",
-              `You have registered for ${event.title}`
-            ),
+          onPress: () => registerForEvent(event),
         },
         {
           text: "Close",
@@ -98,24 +149,44 @@ const EventScreen = ({ navigation }) => {
       onPress={() => showEventDetails(item)}
     >
       <View style={styles.iconBox}>
-        <Ionicons name="calendar" size={28} color="#6C63FF" />
+        <Ionicons
+          name="calendar-outline"
+          size={28}
+          color="#6C63FF"
+        />
       </View>
 
       <View style={styles.eventContent}>
-        <Text style={styles.eventTitle}>{item.title}</Text>
+        <Text style={styles.eventTitle}>
+          {item.title}
+        </Text>
 
         <Text style={styles.category}>
           {item.category}
         </Text>
 
         <View style={styles.infoRow}>
-          <Ionicons name="calendar-outline" size={16} color="#555" />
-          <Text style={styles.infoText}>{item.date}</Text>
+          <Ionicons
+            name="calendar-outline"
+            size={16}
+            color="#555"
+          />
+
+          <Text style={styles.infoText}>
+            {item.date}
+          </Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Ionicons name="location-outline" size={16} color="#555" />
-          <Text style={styles.infoText}>{item.venue}</Text>
+          <Ionicons
+            name="location-outline"
+            size={16}
+            color="#555"
+          />
+
+          <Text style={styles.infoText}>
+            {item.venue}
+          </Text>
         </View>
       </View>
 
@@ -130,20 +201,42 @@ const EventScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
 
-      {/* Header */}
+      {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={26} color="white" />
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons
+            name="arrow-back"
+            size={26}
+            color="white"
+          />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Events</Text>
+        <Text style={styles.headerTitle}>
+          Events
+        </Text>
 
-        <Ionicons name="calendar-outline" size={26} color="white" />
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate("MyRegistrations")
+          }
+        >
+          <Ionicons
+            name="clipboard-outline"
+            size={26}
+            color="white"
+          />
+        </TouchableOpacity>
       </View>
 
-      {/* Search */}
+      {/* SEARCH */}
       <View style={styles.searchBox}>
-        <Ionicons name="search" size={20} color="#777" />
+        <Ionicons
+          name="search-outline"
+          size={21}
+          color="#777"
+        />
 
         <TextInput
           style={styles.searchInput}
@@ -153,7 +246,7 @@ const EventScreen = ({ navigation }) => {
         />
       </View>
 
-      {/* Categories */}
+      {/* CATEGORY */}
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -182,7 +275,7 @@ const EventScreen = ({ navigation }) => {
         )}
       />
 
-      {/* Events */}
+      {/* EVENT LIST */}
       <FlatList
         data={filteredEvents}
         keyExtractor={(item) => item.id}
@@ -195,6 +288,7 @@ const EventScreen = ({ navigation }) => {
               size={60}
               color="#aaa"
             />
+
             <Text style={styles.emptyText}>
               No events found
             </Text>
@@ -231,9 +325,9 @@ const styles = StyleSheet.create({
   searchBox: {
     backgroundColor: "white",
     margin: 15,
+    height: 50,
     borderRadius: 12,
     paddingHorizontal: 15,
-    height: 48,
     flexDirection: "row",
     alignItems: "center",
     elevation: 2,
@@ -251,10 +345,10 @@ const styles = StyleSheet.create({
   },
 
   categoryButton: {
+    backgroundColor: "white",
     paddingHorizontal: 18,
     paddingVertical: 9,
     borderRadius: 20,
-    backgroundColor: "white",
     marginRight: 8,
     borderWidth: 1,
     borderColor: "#ddd",
@@ -335,7 +429,7 @@ const styles = StyleSheet.create({
 
   emptyText: {
     marginTop: 10,
-    fontSize: 16,
     color: "#777",
+    fontSize: 16,
   },
 });
