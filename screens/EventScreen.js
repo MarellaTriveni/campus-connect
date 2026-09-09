@@ -6,7 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-  Alert,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -16,6 +16,11 @@ const STORAGE_KEY = "my_registrations";
 const EventScreen = ({ navigation }) => {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const [message, setMessage] = useState("");
 
   const categories = [
     "All",
@@ -80,31 +85,45 @@ const EventScreen = ({ navigation }) => {
     return matchesSearch && matchesCategory;
   });
 
+  // REGISTER EVENT
   const registerForEvent = async (event) => {
     try {
-      const existingData = await AsyncStorage.getItem(
-        STORAGE_KEY
-      );
+      const existingData =
+        await AsyncStorage.getItem(STORAGE_KEY);
 
       const registrations = existingData
         ? JSON.parse(existingData)
         : [];
 
+      // Check already registered
       const alreadyRegistered = registrations.some(
         (item) => item.id === event.id
       );
 
       if (alreadyRegistered) {
-        Alert.alert(
-          "Already Registered",
-          `You are already registered for ${event.title}.`
+        setMessage(
+          "You are already registered for this event."
         );
         return;
       }
 
+      // Create registration ID
+      const registrationId =
+        "REG-" +
+        new Date().getFullYear() +
+        "-" +
+        String(registrations.length + 1).padStart(3, "0");
+
+      const newRegistration = {
+        ...event,
+        registrationId: registrationId,
+        status: "Registered",
+        registeredAt: new Date().toLocaleDateString(),
+      };
+
       const updatedRegistrations = [
         ...registrations,
-        event,
+        newRegistration,
       ];
 
       await AsyncStorage.setItem(
@@ -112,35 +131,31 @@ const EventScreen = ({ navigation }) => {
         JSON.stringify(updatedRegistrations)
       );
 
-      Alert.alert(
-        "Registration Successful",
-        `You have successfully registered for ${event.title}.`
+      setMessage(
+        "Registration successful!"
       );
+
     } catch (error) {
       console.log(error);
 
-      Alert.alert(
-        "Error",
+      setMessage(
         "Unable to register for the event."
       );
     }
   };
 
+  // OPEN EVENT DETAILS
   const showEventDetails = (event) => {
-    Alert.alert(
-      event.title,
-      `Category: ${event.category}\n\nDate: ${event.date}\nTime: ${event.time}\nVenue: ${event.venue}\n\n${event.description}`,
-      [
-        {
-          text: "Register",
-          onPress: () => registerForEvent(event),
-        },
-        {
-          text: "Close",
-          style: "cancel",
-        },
-      ]
-    );
+    setSelectedEvent(event);
+    setMessage("");
+    setModalVisible(true);
+  };
+
+  // CLOSE MODAL
+  const closeModal = () => {
+    setModalVisible(false);
+    setSelectedEvent(null);
+    setMessage("");
   };
 
   const renderEvent = ({ item }) => (
@@ -260,7 +275,9 @@ const EventScreen = ({ navigation }) => {
               selectedCategory === item &&
                 styles.selectedCategory,
             ]}
-            onPress={() => setSelectedCategory(item)}
+            onPress={() =>
+              setSelectedCategory(item)
+            }
           >
             <Text
               style={[
@@ -295,6 +312,175 @@ const EventScreen = ({ navigation }) => {
           </View>
         }
       />
+
+      {/* EVENT DETAILS MODAL */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalBackground}>
+
+          <View style={styles.modalContainer}>
+
+            {/* MODAL HEADER */}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                Event Details
+              </Text>
+
+              <TouchableOpacity
+                onPress={closeModal}
+              >
+                <Ionicons
+                  name="close"
+                  size={26}
+                  color="#555"
+                />
+              </TouchableOpacity>
+            </View>
+
+            {selectedEvent && (
+              <>
+                <View style={styles.modalIcon}>
+                  <Ionicons
+                    name="calendar"
+                    size={42}
+                    color="#6C63FF"
+                  />
+                </View>
+
+                <Text style={styles.detailTitle}>
+                  {selectedEvent.title}
+                </Text>
+
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {selectedEvent.category}
+                  </Text>
+                </View>
+
+                {/* DATE */}
+                <View style={styles.detailRow}>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={21}
+                    color="#6C63FF"
+                  />
+
+                  <View>
+                    <Text style={styles.detailLabel}>
+                      Date
+                    </Text>
+
+                    <Text style={styles.detailValue}>
+                      {selectedEvent.date}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* TIME */}
+                <View style={styles.detailRow}>
+                  <Ionicons
+                    name="time-outline"
+                    size={21}
+                    color="#6C63FF"
+                  />
+
+                  <View>
+                    <Text style={styles.detailLabel}>
+                      Time
+                    </Text>
+
+                    <Text style={styles.detailValue}>
+                      {selectedEvent.time}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* VENUE */}
+                <View style={styles.detailRow}>
+                  <Ionicons
+                    name="location-outline"
+                    size={21}
+                    color="#6C63FF"
+                  />
+
+                  <View>
+                    <Text style={styles.detailLabel}>
+                      Venue
+                    </Text>
+
+                    <Text style={styles.detailValue}>
+                      {selectedEvent.venue}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* DESCRIPTION */}
+                <Text style={styles.descriptionLabel}>
+                  Description
+                </Text>
+
+                <Text style={styles.description}>
+                  {selectedEvent.description}
+                </Text>
+
+                {/* SUCCESS MESSAGE */}
+                {message !== "" && (
+                  <View style={styles.messageBox}>
+                    <Ionicons
+                      name={
+                        message.includes("successful")
+                          ? "checkmark-circle"
+                          : "information-circle"
+                      }
+                      size={22}
+                      color="#2E9B55"
+                    />
+
+                    <Text style={styles.messageText}>
+                      {message}
+                    </Text>
+                  </View>
+                )}
+
+                {/* BUTTONS */}
+                <View style={styles.buttonRow}>
+
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={closeModal}
+                  >
+                    <Text style={styles.closeButtonText}>
+                      Close
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.registerButton}
+                    onPress={() =>
+                      registerForEvent(selectedEvent)
+                    }
+                  >
+                    <Ionicons
+                      name="checkmark-circle-outline"
+                      size={20}
+                      color="white"
+                    />
+
+                    <Text style={styles.registerButtonText}>
+                      Register
+                    </Text>
+                  </TouchableOpacity>
+
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -431,5 +617,156 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: "#777",
     fontSize: 16,
+  },
+
+  /* MODAL */
+
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+
+  modalContainer: {
+    width: "100%",
+    maxWidth: 500,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 22,
+  },
+
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+
+  modalTitle: {
+    fontSize: 21,
+    fontWeight: "bold",
+    color: "#222",
+  },
+
+  modalIcon: {
+    width: 75,
+    height: 75,
+    borderRadius: 40,
+    backgroundColor: "#EEEEFF",
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    marginVertical: 10,
+  },
+
+  detailTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#222",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+
+  badge: {
+    alignSelf: "center",
+    backgroundColor: "#EEEEFF",
+    paddingHorizontal: 15,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 15,
+  },
+
+  badgeText: {
+    color: "#6C63FF",
+    fontWeight: "bold",
+  },
+
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 8,
+  },
+
+  detailLabel: {
+    fontSize: 12,
+    color: "#888",
+    marginLeft: 12,
+  },
+
+  detailValue: {
+    fontSize: 15,
+    color: "#333",
+    fontWeight: "500",
+    marginLeft: 12,
+  },
+
+  descriptionLabel: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#333",
+    marginTop: 10,
+    marginBottom: 5,
+  },
+
+  description: {
+    color: "#666",
+    fontSize: 14,
+    lineHeight: 20,
+  },
+
+  messageBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EAF8EF",
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 15,
+  },
+
+  messageText: {
+    color: "#2E9B55",
+    marginLeft: 8,
+    fontWeight: "600",
+    flex: 1,
+  },
+
+  buttonRow: {
+    flexDirection: "row",
+    marginTop: 20,
+    gap: 10,
+  },
+
+  closeButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#6C63FF",
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: "center",
+  },
+
+  closeButtonText: {
+    color: "#6C63FF",
+    fontWeight: "bold",
+    fontSize: 15,
+  },
+
+  registerButton: {
+    flex: 1,
+    backgroundColor: "#6C63FF",
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 7,
+  },
+
+  registerButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 15,
   },
 });
