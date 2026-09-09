@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 
 const STORAGE_KEY = "my_registrations";
 
@@ -20,6 +21,7 @@ const EventScreen = ({ navigation }) => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
 
+  const [registeredIds, setRegisteredIds] = useState([]);
   const [message, setMessage] = useState("");
 
   const categories = [
@@ -73,10 +75,39 @@ const EventScreen = ({ navigation }) => {
     },
   ];
 
+  // Load registered events whenever Events screen becomes active
+  useFocusEffect(
+    useCallback(() => {
+      loadRegistrations();
+    }, [])
+  );
+
+  const loadRegistrations = async () => {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEY);
+
+      if (data) {
+        const registrations = JSON.parse(data);
+
+        const ids = registrations
+          .filter((item) => item.status !== "Cancelled")
+          .map((item) => item.id);
+
+        setRegisteredIds(ids);
+      } else {
+        setRegisteredIds([]);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const filteredEvents = events.filter((event) => {
     const matchesSearch =
       event.title.toLowerCase().includes(search.toLowerCase()) ||
-      event.description.toLowerCase().includes(search.toLowerCase());
+      event.description
+        .toLowerCase()
+        .includes(search.toLowerCase());
 
     const matchesCategory =
       selectedCategory === "All" ||
@@ -85,7 +116,6 @@ const EventScreen = ({ navigation }) => {
     return matchesSearch && matchesCategory;
   });
 
-  // REGISTER EVENT
   const registerForEvent = async (event) => {
     try {
       const existingData =
@@ -95,19 +125,17 @@ const EventScreen = ({ navigation }) => {
         ? JSON.parse(existingData)
         : [];
 
-      // Check already registered
       const alreadyRegistered = registrations.some(
-        (item) => item.id === event.id
+        (item) =>
+          item.id === event.id &&
+          item.status !== "Cancelled"
       );
 
       if (alreadyRegistered) {
-        setMessage(
-          "You are already registered for this event."
-        );
+        setMessage("You are already registered.");
         return;
       }
 
-      // Create registration ID
       const registrationId =
         "REG-" +
         new Date().getFullYear() +
@@ -116,7 +144,7 @@ const EventScreen = ({ navigation }) => {
 
       const newRegistration = {
         ...event,
-        registrationId: registrationId,
+        registrationId,
         status: "Registered",
         registeredAt: new Date().toLocaleDateString(),
       };
@@ -131,87 +159,105 @@ const EventScreen = ({ navigation }) => {
         JSON.stringify(updatedRegistrations)
       );
 
-      setMessage(
-        "Registration successful!"
-      );
+      setRegisteredIds((prev) => [...prev, event.id]);
 
+      setMessage("Registration successful!");
     } catch (error) {
       console.log(error);
-
-      setMessage(
-        "Unable to register for the event."
-      );
+      setMessage("Unable to register for the event.");
     }
   };
 
-  // OPEN EVENT DETAILS
   const showEventDetails = (event) => {
     setSelectedEvent(event);
     setMessage("");
     setModalVisible(true);
   };
 
-  // CLOSE MODAL
   const closeModal = () => {
     setModalVisible(false);
     setSelectedEvent(null);
     setMessage("");
   };
 
-  const renderEvent = ({ item }) => (
-    <TouchableOpacity
-      style={styles.eventCard}
-      onPress={() => showEventDetails(item)}
-    >
-      <View style={styles.iconBox}>
-        <Ionicons
-          name="calendar-outline"
-          size={28}
-          color="#6C63FF"
-        />
-      </View>
+  const renderEvent = ({ item }) => {
+    const isRegistered = registeredIds.includes(item.id);
 
-      <View style={styles.eventContent}>
-        <Text style={styles.eventTitle}>
-          {item.title}
-        </Text>
-
-        <Text style={styles.category}>
-          {item.category}
-        </Text>
-
-        <View style={styles.infoRow}>
+    return (
+      <TouchableOpacity
+        style={styles.eventCard}
+        onPress={() => showEventDetails(item)}
+      >
+        <View style={styles.iconBox}>
           <Ionicons
             name="calendar-outline"
-            size={16}
-            color="#555"
+            size={28}
+            color="#6C63FF"
           />
-
-          <Text style={styles.infoText}>
-            {item.date}
-          </Text>
         </View>
 
-        <View style={styles.infoRow}>
-          <Ionicons
-            name="location-outline"
-            size={16}
-            color="#555"
-          />
+        <View style={styles.eventContent}>
+          <View style={styles.titleRow}>
+            <Text style={styles.eventTitle}>
+              {item.title}
+            </Text>
 
-          <Text style={styles.infoText}>
-            {item.venue}
+            {isRegistered && (
+              <View style={styles.registeredBadge}>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={15}
+                  color="#249653"
+                />
+
+                <Text style={styles.registeredText}>
+                  Registered
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <Text style={styles.category}>
+            {item.category}
           </Text>
-        </View>
-      </View>
 
-      <Ionicons
-        name="chevron-forward"
-        size={22}
-        color="#777"
-      />
-    </TouchableOpacity>
-  );
+          <View style={styles.infoRow}>
+            <Ionicons
+              name="calendar-outline"
+              size={16}
+              color="#555"
+            />
+
+            <Text style={styles.infoText}>
+              {item.date}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Ionicons
+              name="location-outline"
+              size={16}
+              color="#555"
+            />
+
+            <Text style={styles.infoText}>
+              {item.venue}
+            </Text>
+          </View>
+        </View>
+
+        <Ionicons
+          name="chevron-forward"
+          size={22}
+          color="#777"
+        />
+      </TouchableOpacity>
+    );
+  };
+
+  const selectedIsRegistered =
+    selectedEvent &&
+    registeredIds.includes(selectedEvent.id);
 
   return (
     <View style={styles.container}>
@@ -292,7 +338,7 @@ const EventScreen = ({ navigation }) => {
         )}
       />
 
-      {/* EVENT LIST */}
+      {/* EVENTS */}
       <FlatList
         data={filteredEvents}
         keyExtractor={(item) => item.id}
@@ -316,23 +362,19 @@ const EventScreen = ({ navigation }) => {
       {/* EVENT DETAILS MODAL */}
       <Modal
         visible={modalVisible}
-        transparent={true}
+        transparent
         animationType="slide"
         onRequestClose={closeModal}
       >
         <View style={styles.modalBackground}>
-
           <View style={styles.modalContainer}>
 
-            {/* MODAL HEADER */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
                 Event Details
               </Text>
 
-              <TouchableOpacity
-                onPress={closeModal}
-              >
+              <TouchableOpacity onPress={closeModal}>
                 <Ionicons
                   name="close"
                   size={26}
@@ -361,7 +403,20 @@ const EventScreen = ({ navigation }) => {
                   </Text>
                 </View>
 
-                {/* DATE */}
+                {selectedIsRegistered && (
+                  <View style={styles.modalRegistered}>
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={20}
+                      color="#249653"
+                    />
+
+                    <Text style={styles.modalRegisteredText}>
+                      Already Registered
+                    </Text>
+                  </View>
+                )}
+
                 <View style={styles.detailRow}>
                   <Ionicons
                     name="calendar-outline"
@@ -380,7 +435,6 @@ const EventScreen = ({ navigation }) => {
                   </View>
                 </View>
 
-                {/* TIME */}
                 <View style={styles.detailRow}>
                   <Ionicons
                     name="time-outline"
@@ -399,7 +453,6 @@ const EventScreen = ({ navigation }) => {
                   </View>
                 </View>
 
-                {/* VENUE */}
                 <View style={styles.detailRow}>
                   <Ionicons
                     name="location-outline"
@@ -418,7 +471,6 @@ const EventScreen = ({ navigation }) => {
                   </View>
                 </View>
 
-                {/* DESCRIPTION */}
                 <Text style={styles.descriptionLabel}>
                   Description
                 </Text>
@@ -427,17 +479,12 @@ const EventScreen = ({ navigation }) => {
                   {selectedEvent.description}
                 </Text>
 
-                {/* SUCCESS MESSAGE */}
                 {message !== "" && (
                   <View style={styles.messageBox}>
                     <Ionicons
-                      name={
-                        message.includes("successful")
-                          ? "checkmark-circle"
-                          : "information-circle"
-                      }
+                      name="checkmark-circle"
                       size={22}
-                      color="#2E9B55"
+                      color="#249653"
                     />
 
                     <Text style={styles.messageText}>
@@ -446,9 +493,7 @@ const EventScreen = ({ navigation }) => {
                   </View>
                 )}
 
-                {/* BUTTONS */}
                 <View style={styles.buttonRow}>
-
                   <TouchableOpacity
                     style={styles.closeButton}
                     onPress={closeModal}
@@ -458,23 +503,36 @@ const EventScreen = ({ navigation }) => {
                     </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={styles.registerButton}
-                    onPress={() =>
-                      registerForEvent(selectedEvent)
-                    }
-                  >
-                    <Ionicons
-                      name="checkmark-circle-outline"
-                      size={20}
-                      color="white"
-                    />
+                  {!selectedIsRegistered ? (
+                    <TouchableOpacity
+                      style={styles.registerButton}
+                      onPress={() =>
+                        registerForEvent(selectedEvent)
+                      }
+                    >
+                      <Ionicons
+                        name="checkmark-circle-outline"
+                        size={20}
+                        color="white"
+                      />
 
-                    <Text style={styles.registerButtonText}>
-                      Register
-                    </Text>
-                  </TouchableOpacity>
+                      <Text style={styles.registerButtonText}>
+                        Register
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={styles.alreadyButton}>
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color="#249653"
+                      />
 
+                      <Text style={styles.alreadyButtonText}>
+                        Registered
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </>
             )}
@@ -582,11 +640,35 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+  },
+
   eventTitle: {
     fontSize: 17,
     fontWeight: "bold",
     color: "#222",
     marginBottom: 5,
+  },
+
+  registeredBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EAF8EF",
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: 10,
+    marginLeft: 8,
+    marginBottom: 5,
+  },
+
+  registeredText: {
+    color: "#249653",
+    fontSize: 11,
+    fontWeight: "bold",
+    marginLeft: 3,
   },
 
   category: {
@@ -619,8 +701,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 
-  /* MODAL */
-
   modalBackground: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.45)",
@@ -641,7 +721,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
   },
 
   modalTitle: {
@@ -666,7 +745,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#222",
     textAlign: "center",
-    marginBottom: 8,
   },
 
   badge: {
@@ -675,12 +753,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 6,
     borderRadius: 20,
-    marginBottom: 15,
+    marginVertical: 8,
   },
 
   badgeText: {
     color: "#6C63FF",
     fontWeight: "bold",
+  },
+
+  modalRegistered: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#EAF8EF",
+    padding: 9,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+
+  modalRegisteredText: {
+    color: "#249653",
+    fontWeight: "bold",
+    marginLeft: 6,
   },
 
   detailRow: {
@@ -726,10 +820,9 @@ const styles = StyleSheet.create({
   },
 
   messageText: {
-    color: "#2E9B55",
+    color: "#249653",
     marginLeft: 8,
     fontWeight: "600",
-    flex: 1,
   },
 
   buttonRow: {
@@ -750,7 +843,6 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: "#6C63FF",
     fontWeight: "bold",
-    fontSize: 15,
   },
 
   registerButton: {
@@ -767,6 +859,21 @@ const styles = StyleSheet.create({
   registerButtonText: {
     color: "white",
     fontWeight: "bold",
-    fontSize: 15,
+  },
+
+  alreadyButton: {
+    flex: 1,
+    backgroundColor: "#EAF8EF",
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 7,
+  },
+
+  alreadyButtonText: {
+    color: "#249653",
+    fontWeight: "bold",
   },
 });

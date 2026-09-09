@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Modal,
+  TextInput,
+  Alert,
 } from "react-native";
-
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 
 const STORAGE_KEY = "my_registrations";
 
@@ -18,25 +20,26 @@ const MyRegistrationsScreen = ({ navigation }) => {
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Selected event for details modal
   const [selectedEvent, setSelectedEvent] = useState(null);
-
-  // Modal visibility
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Load registrations when screen opens
-  useEffect(() => {
-    loadRegistrations();
-  }, []);
+  // NEW - Search and filter
+  const [search, setSearch] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState("All");
 
-  // --------------------------------
-  // LOAD REGISTRATIONS
-  // --------------------------------
+  // Load whenever screen opens
+  useFocusEffect(
+    useCallback(() => {
+      loadRegistrations();
+    }, [])
+  );
+
   const loadRegistrations = async () => {
     try {
-      const savedData = await AsyncStorage.getItem(
-        STORAGE_KEY
-      );
+      setLoading(true);
+
+      const savedData =
+        await AsyncStorage.getItem(STORAGE_KEY);
 
       if (savedData) {
         setRegistrations(JSON.parse(savedData));
@@ -44,182 +47,297 @@ const MyRegistrationsScreen = ({ navigation }) => {
         setRegistrations([]);
       }
     } catch (error) {
-      console.log(
-        "Error loading registrations:",
-        error
-      );
+      console.log(error);
     } finally {
       setLoading(false);
     }
   };
 
-  // --------------------------------
-  // VIEW DETAILS
-  // --------------------------------
+  // Counts
+  const totalCount = registrations.length;
+
+  const registeredCount = registrations.filter(
+    (item) => item.status !== "Cancelled"
+  ).length;
+
+  const cancelledCount = registrations.filter(
+    (item) => item.status === "Cancelled"
+  ).length;
+
+  // Search + Filter
+  const filteredRegistrations = registrations.filter((item) => {
+    const searchText = search.toLowerCase();
+
+    const matchesSearch =
+      item.title.toLowerCase().includes(searchText) ||
+      item.category.toLowerCase().includes(searchText) ||
+      item.venue.toLowerCase().includes(searchText) ||
+      (item.registrationId &&
+        item.registrationId
+          .toLowerCase()
+          .includes(searchText));
+
+    let matchesFilter = true;
+
+    if (selectedFilter === "Registered") {
+      matchesFilter = item.status !== "Cancelled";
+    }
+
+    if (selectedFilter === "Cancelled") {
+      matchesFilter = item.status === "Cancelled";
+    }
+
+    return matchesSearch && matchesFilter;
+  });
+
+  // View details
   const viewDetails = (item) => {
     setSelectedEvent(item);
     setModalVisible(true);
   };
 
-  // --------------------------------
-  // CLOSE MODAL
-  // --------------------------------
   const closeModal = () => {
     setModalVisible(false);
     setSelectedEvent(null);
   };
 
-  // --------------------------------
-  // CANCEL REGISTRATION
-  // --------------------------------
-  const cancelRegistration = async (id) => {
-    try {
-      const updatedData = registrations.filter(
-        (item) => item.id !== id
-      );
+  // Cancel registration
+  const cancelRegistration = (item) => {
+    Alert.alert(
+      "Cancel Registration",
+      `Are you sure you want to cancel ${item.title}?`,
+      [
+        {
+          text: "Keep",
+          style: "cancel",
+        },
+        {
+          text: "Cancel",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const updatedRegistrations =
+                registrations.map((registration) => {
+                  if (registration.id === item.id) {
+                    return {
+                      ...registration,
+                      status: "Cancelled",
+                    };
+                  }
 
-      await AsyncStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(updatedData)
-      );
+                  return registration;
+                });
 
-      setRegistrations(updatedData);
-    } catch (error) {
-      console.log(
-        "Error cancelling registration:",
-        error
-      );
-    }
+              await AsyncStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(updatedRegistrations)
+              );
+
+              setRegistrations(updatedRegistrations);
+            } catch (error) {
+              console.log(error);
+
+              Alert.alert(
+                "Error",
+                "Unable to cancel registration."
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
-  // --------------------------------
-  // REGISTRATION CARD
-  // --------------------------------
-  const renderRegistration = ({
-    item,
-    index,
-  }) => {
-    const registrationId = `REG${String(
-      index + 1
-    ).padStart(3, "0")}`;
+  // Empty state
+  const EmptyState = () => {
+    const isSearching =
+      search.trim().length > 0 ||
+      selectedFilter !== "All";
 
     return (
-      <View style={styles.card}>
-
-        {/* ICON */}
-        <View style={styles.iconBox}>
+      <View style={styles.emptyContainer}>
+        <View style={styles.emptyIcon}>
           <Ionicons
-            name="clipboard-outline"
-            size={28}
+            name={
+              isSearching
+                ? "search-outline"
+                : "clipboard-outline"
+            }
+            size={48}
             color="#6C63FF"
           />
         </View>
 
-        {/* CONTENT */}
-        <View style={styles.content}>
+        <Text style={styles.emptyTitle}>
+          {isSearching
+            ? "No registrations found"
+            : "No Registrations"}
+        </Text>
 
-          {/* TITLE + STATUS */}
-          <View style={styles.titleRow}>
+        <Text style={styles.emptyText}>
+          {isSearching
+            ? "Try a different search or filter."
+            : "You have not registered for any events yet."}
+        </Text>
 
-            <Text
-              style={styles.title}
-              numberOfLines={2}
-            >
+        {!isSearching && (
+          <TouchableOpacity
+            style={styles.browseButton}
+            onPress={() =>
+              navigation.navigate("Events")
+            }
+          >
+            <Ionicons
+              name="calendar-outline"
+              size={20}
+              color="white"
+            />
+
+            <Text style={styles.browseButtonText}>
+              Browse Events
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
+
+  // Registration card
+  const renderRegistration = ({ item }) => {
+    const isCancelled =
+      item.status === "Cancelled";
+
+    return (
+      <View style={styles.card}>
+
+        {/* Top */}
+        <View style={styles.cardTop}>
+          <View style={styles.iconBox}>
+            <Ionicons
+              name="clipboard-outline"
+              size={28}
+              color="#6C63FF"
+            />
+          </View>
+
+          <View style={styles.titleContainer}>
+            <Text style={styles.eventTitle}>
               {item.title}
             </Text>
 
-            <View style={styles.statusBadge}>
-              <Ionicons
-                name="checkmark-circle"
-                size={13}
-                color="#2E8B57"
-              />
-
-              <Text style={styles.statusText}>
-                Registered
-              </Text>
-            </View>
-
-          </View>
-
-          {/* REGISTRATION ID */}
-          <Text style={styles.registrationId}>
-            Registration ID: {registrationId}
-          </Text>
-
-          {/* CATEGORY */}
-          <Text style={styles.category}>
-            {item.category}
-          </Text>
-
-          {/* DATE */}
-          <View style={styles.infoRow}>
-            <Ionicons
-              name="calendar-outline"
-              size={16}
-              color="#555"
-            />
-
-            <Text style={styles.info}>
-              {item.date}
+            <Text style={styles.registrationId}>
+              Registration ID:{" "}
+              {item.registrationId || "REG001"}
             </Text>
           </View>
 
-          {/* TIME */}
-          <View style={styles.infoRow}>
+          <View
+            style={[
+              styles.statusBadge,
+              isCancelled &&
+                styles.cancelledBadge,
+            ]}
+          >
             <Ionicons
-              name="time-outline"
-              size={16}
-              color="#555"
+              name={
+                isCancelled
+                  ? "close-circle"
+                  : "checkmark-circle"
+              }
+              size={15}
+              color={
+                isCancelled
+                  ? "#D64545"
+                  : "#249653"
+              }
             />
 
-            <Text style={styles.info}>
-              {item.time}
-            </Text>
-          </View>
-
-          {/* VENUE */}
-          <View style={styles.infoRow}>
-            <Ionicons
-              name="location-outline"
-              size={16}
-              color="#555"
-            />
-
-            <Text style={styles.info}>
-              {item.venue}
-            </Text>
-          </View>
-
-          {/* BUTTONS */}
-          <View style={styles.buttonRow}>
-
-            {/* VIEW DETAILS */}
-            <TouchableOpacity
-              style={styles.detailsButton}
-              onPress={() => viewDetails(item)}
+            <Text
+              style={[
+                styles.statusText,
+                isCancelled &&
+                  styles.cancelledText,
+              ]}
             >
-              <Ionicons
-                name="eye-outline"
-                size={18}
-                color="#6C63FF"
-              />
+              {isCancelled
+                ? "Cancelled"
+                : "Registered"}
+            </Text>
+          </View>
+        </View>
 
-              <Text style={styles.detailsText}>
-                View Details
-              </Text>
-            </TouchableOpacity>
+        {/* Category */}
+        <Text style={styles.category}>
+          {item.category}
+        </Text>
 
-            {/* CANCEL */}
+        {/* Date */}
+        <View style={styles.infoRow}>
+          <Ionicons
+            name="calendar-outline"
+            size={18}
+            color="#666"
+          />
+
+          <Text style={styles.infoText}>
+            {item.date}
+          </Text>
+        </View>
+
+        {/* Time */}
+        <View style={styles.infoRow}>
+          <Ionicons
+            name="time-outline"
+            size={18}
+            color="#666"
+          />
+
+          <Text style={styles.infoText}>
+            {item.time}
+          </Text>
+        </View>
+
+        {/* Venue */}
+        <View style={styles.infoRow}>
+          <Ionicons
+            name="location-outline"
+            size={18}
+            color="#666"
+          />
+
+          <Text style={styles.infoText}>
+            {item.venue}
+          </Text>
+        </View>
+
+        {/* Buttons */}
+        <View style={styles.buttonRow}>
+
+          <TouchableOpacity
+            style={styles.detailsButton}
+            onPress={() => viewDetails(item)}
+          >
+            <Ionicons
+              name="eye-outline"
+              size={19}
+              color="#6C63FF"
+            />
+
+            <Text style={styles.detailsText}>
+              View Details
+            </Text>
+          </TouchableOpacity>
+
+          {!isCancelled && (
             <TouchableOpacity
               style={styles.cancelButton}
               onPress={() =>
-                cancelRegistration(item.id)
+                cancelRegistration(item)
               }
             >
               <Ionicons
                 name="close-circle-outline"
-                size={18}
+                size={19}
                 color="white"
               />
 
@@ -227,8 +345,7 @@ const MyRegistrationsScreen = ({ navigation }) => {
                 Cancel
               </Text>
             </TouchableOpacity>
-
-          </View>
+          )}
 
         </View>
       </View>
@@ -238,18 +355,15 @@ const MyRegistrationsScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
 
-      {/* =========================
-          HEADER
-      ========================= */}
+      {/* HEADER */}
       <View style={styles.header}>
 
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.backButton}
         >
           <Ionicons
             name="arrow-back"
-            size={25}
+            size={27}
             color="white"
           />
         </TouchableOpacity>
@@ -258,30 +372,140 @@ const MyRegistrationsScreen = ({ navigation }) => {
           My Registrations
         </Text>
 
-        {/* COUNT */}
-        <View style={styles.countBox}>
-
+        <View style={styles.countBadge}>
           <Ionicons
             name="clipboard-outline"
-            size={15}
+            size={20}
             color="#6C63FF"
           />
 
           <Text style={styles.countText}>
-            {registrations.length}
+            {totalCount}
           </Text>
-
         </View>
 
       </View>
 
-      {/* =========================
-          LOADING
-      ========================= */}
+      {/* SUMMARY */}
+      <View style={styles.summaryCard}>
+
+        <View style={styles.summaryItem}>
+          <Text style={styles.summaryNumber}>
+            {totalCount}
+          </Text>
+
+          <Text style={styles.summaryLabel}>
+            Total
+          </Text>
+        </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.summaryItem}>
+          <Text
+            style={[
+              styles.summaryNumber,
+              { color: "#249653" },
+            ]}
+          >
+            {registeredCount}
+          </Text>
+
+          <Text style={styles.summaryLabel}>
+            Registered
+          </Text>
+        </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.summaryItem}>
+          <Text
+            style={[
+              styles.summaryNumber,
+              { color: "#D64545" },
+            ]}
+          >
+            {cancelledCount}
+          </Text>
+
+          <Text style={styles.summaryLabel}>
+            Cancelled
+          </Text>
+        </View>
+
+      </View>
+
+      {/* SEARCH */}
+      <View style={styles.searchBox}>
+
+        <Ionicons
+          name="search-outline"
+          size={21}
+          color="#777"
+        />
+
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search registrations..."
+          value={search}
+          onChangeText={setSearch}
+        />
+
+        {search.length > 0 && (
+          <TouchableOpacity
+            onPress={() => setSearch("")}
+          >
+            <Ionicons
+              name="close-circle"
+              size={20}
+              color="#999"
+            />
+          </TouchableOpacity>
+        )}
+
+      </View>
+
+      {/* FILTERS */}
+      <View style={styles.filterContainer}>
+
+        {[
+          `All ${totalCount}`,
+          `Registered ${registeredCount}`,
+          `Cancelled ${cancelledCount}`,
+        ].map((filter) => {
+
+          const filterName = filter.split(" ")[0];
+
+          return (
+            <TouchableOpacity
+              key={filter}
+              style={[
+                styles.filterButton,
+                selectedFilter === filterName &&
+                  styles.selectedFilter,
+              ]}
+              onPress={() =>
+                setSelectedFilter(filterName)
+              }
+            >
+              <Text
+                style={[
+                  styles.filterText,
+                  selectedFilter === filterName &&
+                    styles.selectedFilterText,
+                ]}
+              >
+                {filter}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+
+      </View>
+
+      {/* LIST */}
       {loading ? (
-
         <View style={styles.loadingContainer}>
-
           <ActivityIndicator
             size="large"
             color="#6C63FF"
@@ -290,259 +514,183 @@ const MyRegistrationsScreen = ({ navigation }) => {
           <Text style={styles.loadingText}>
             Loading registrations...
           </Text>
-
         </View>
-
       ) : (
-
         <FlatList
-          data={registrations}
-          keyExtractor={(item) => item.id}
+          data={filteredRegistrations}
+          keyExtractor={(item, index) =>
+            item.registrationId ||
+            `${item.id}-${index}`
+          }
           renderItem={renderRegistration}
-          contentContainerStyle={styles.list}
-
+          contentContainerStyle={[
+            styles.listContent,
+            filteredRegistrations.length === 0 &&
+              styles.emptyList,
+          ]}
+          ListEmptyComponent={<EmptyState />}
           showsVerticalScrollIndicator={false}
-
-          ListHeaderComponent={
-            registrations.length > 0 ? (
-              <View style={styles.infoCard}>
-
-                <Ionicons
-                  name="information-circle-outline"
-                  size={22}
-                  color="#6C63FF"
-                />
-
-                <Text style={styles.infoCardText}>
-                  Here you can view and manage
-                  your registered events.
-                </Text>
-
-              </View>
-            ) : null
-          }
-
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-
-              <View style={styles.emptyIconCircle}>
-
-                <Ionicons
-                  name="clipboard-outline"
-                  size={60}
-                  color="#6C63FF"
-                />
-
-              </View>
-
-              <Text style={styles.emptyTitle}>
-                No Registrations
-              </Text>
-
-              <Text style={styles.emptyText}>
-                You have not registered for any
-                events yet.
-              </Text>
-
-              <TouchableOpacity
-                style={styles.eventButton}
-                onPress={() =>
-                  navigation.navigate("Events")
-                }
-              >
-                <Ionicons
-                  name="calendar-outline"
-                  size={20}
-                  color="white"
-                />
-
-                <Text style={styles.eventButtonText}>
-                  Browse Events
-                </Text>
-
-              </TouchableOpacity>
-
-            </View>
-          }
         />
-
       )}
 
-      {/* =========================
-          DETAILS MODAL
-      ========================= */}
+      {/* DETAILS MODAL */}
       <Modal
         visible={modalVisible}
-        transparent={true}
+        transparent
         animationType="slide"
         onRequestClose={closeModal}
       >
+        <View style={styles.modalBackground}>
 
-        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
 
-          <View style={styles.modalBox}>
-
-            {/* CLOSE ICON */}
-            <TouchableOpacity
-              style={styles.modalCloseIcon}
-              onPress={closeModal}
-            >
-              <Ionicons
-                name="close"
-                size={24}
-                color="#555"
-              />
-            </TouchableOpacity>
-
-            {/* SUCCESS ICON */}
-            <View style={styles.successCircle}>
-
-              <Ionicons
-                name="checkmark"
-                size={40}
-                color="#2E8B57"
-              />
-
-            </View>
-
-            {/* MODAL TITLE */}
-            <Text style={styles.modalTitle}>
-              Registration Confirmed
-            </Text>
-
-            {/* EVENT NAME */}
-            <Text style={styles.modalEventTitle}>
-              {selectedEvent?.title}
-            </Text>
-
-            {/* STATUS */}
-            <View style={styles.modalStatus}>
-
-              <Ionicons
-                name="checkmark-circle"
-                size={17}
-                color="#2E8B57"
-              />
-
-              <Text style={styles.modalStatusText}>
-                Registered
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                Registration Details
               </Text>
 
+              <TouchableOpacity
+                onPress={closeModal}
+              >
+                <Ionicons
+                  name="close"
+                  size={27}
+                  color="#555"
+                />
+              </TouchableOpacity>
             </View>
 
-            {/* DETAILS */}
-            <View style={styles.detailsContainer}>
+            {selectedEvent && (
+              <>
+                <View style={styles.modalIcon}>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={45}
+                    color={
+                      selectedEvent.status ===
+                      "Cancelled"
+                        ? "#D64545"
+                        : "#249653"
+                    }
+                  />
+                </View>
 
-              {/* DATE */}
-              <View style={styles.detailRow}>
+                <Text style={styles.modalEventTitle}>
+                  {selectedEvent.title}
+                </Text>
 
-                <View style={styles.detailIcon}>
+                <View
+                  style={[
+                    styles.modalStatus,
+                    selectedEvent.status ===
+                      "Cancelled" &&
+                      styles.modalCancelled,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.modalStatusText,
+                      selectedEvent.status ===
+                        "Cancelled" &&
+                        styles.modalCancelledText,
+                    ]}
+                  >
+                    {selectedEvent.status ===
+                    "Cancelled"
+                      ? "Registration Cancelled"
+                      : "Registration Confirmed"}
+                  </Text>
+                </View>
+
+                <View style={styles.modalInfoRow}>
+                  <Ionicons
+                    name="id-card-outline"
+                    size={21}
+                    color="#6C63FF"
+                  />
+
+                  <View>
+                    <Text style={styles.modalLabel}>
+                      Registration ID
+                    </Text>
+
+                    <Text style={styles.modalValue}>
+                      {selectedEvent.registrationId ||
+                        "REG001"}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.modalInfoRow}>
                   <Ionicons
                     name="calendar-outline"
-                    size={19}
+                    size={21}
                     color="#6C63FF"
                   />
+
+                  <View>
+                    <Text style={styles.modalLabel}>
+                      Date
+                    </Text>
+
+                    <Text style={styles.modalValue}>
+                      {selectedEvent.date}
+                    </Text>
+                  </View>
                 </View>
 
-                <View>
-                  <Text style={styles.detailLabel}>
-                    Date
-                  </Text>
-
-                  <Text style={styles.detailValue}>
-                    {selectedEvent?.date}
-                  </Text>
-                </View>
-
-              </View>
-
-              {/* TIME */}
-              <View style={styles.detailRow}>
-
-                <View style={styles.detailIcon}>
+                <View style={styles.modalInfoRow}>
                   <Ionicons
                     name="time-outline"
-                    size={19}
+                    size={21}
                     color="#6C63FF"
                   />
+
+                  <View>
+                    <Text style={styles.modalLabel}>
+                      Time
+                    </Text>
+
+                    <Text style={styles.modalValue}>
+                      {selectedEvent.time}
+                    </Text>
+                  </View>
                 </View>
 
-                <View>
-                  <Text style={styles.detailLabel}>
-                    Time
-                  </Text>
-
-                  <Text style={styles.detailValue}>
-                    {selectedEvent?.time}
-                  </Text>
-                </View>
-
-              </View>
-
-              {/* VENUE */}
-              <View style={styles.detailRow}>
-
-                <View style={styles.detailIcon}>
+                <View style={styles.modalInfoRow}>
                   <Ionicons
                     name="location-outline"
-                    size={19}
+                    size={21}
                     color="#6C63FF"
                   />
+
+                  <View>
+                    <Text style={styles.modalLabel}>
+                      Venue
+                    </Text>
+
+                    <Text style={styles.modalValue}>
+                      {selectedEvent.venue}
+                    </Text>
+                  </View>
                 </View>
 
-                <View>
-                  <Text style={styles.detailLabel}>
-                    Venue
+                <TouchableOpacity
+                  style={styles.modalCloseButton}
+                  onPress={closeModal}
+                >
+                  <Text
+                    style={styles.modalCloseText}
+                  >
+                    Close
                   </Text>
-
-                  <Text style={styles.detailValue}>
-                    {selectedEvent?.venue}
-                  </Text>
-                </View>
-
-              </View>
-
-              {/* CATEGORY */}
-              <View style={styles.detailRow}>
-
-                <View style={styles.detailIcon}>
-                  <Ionicons
-                    name="pricetag-outline"
-                    size={19}
-                    color="#6C63FF"
-                  />
-                </View>
-
-                <View>
-                  <Text style={styles.detailLabel}>
-                    Category
-                  </Text>
-
-                  <Text style={styles.detailValue}>
-                    {selectedEvent?.category}
-                  </Text>
-                </View>
-
-              </View>
-
-            </View>
-
-            {/* CLOSE BUTTON */}
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={closeModal}
-            >
-              <Text style={styles.closeButtonText}>
-                Close
-              </Text>
-            </TouchableOpacity>
+                </TouchableOpacity>
+              </>
+            )}
 
           </View>
-
         </View>
-
       </Modal>
-
     </View>
   );
 };
@@ -550,14 +698,11 @@ const MyRegistrationsScreen = ({ navigation }) => {
 export default MyRegistrationsScreen;
 
 const styles = StyleSheet.create({
-
-  // MAIN
   container: {
     flex: 1,
     backgroundColor: "#F7F7FB",
   },
 
-  // HEADER
   header: {
     height: 65,
     backgroundColor: "#6C63FF",
@@ -567,66 +712,128 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
 
-  backButton: {
-    width: 40,
-  },
-
   headerTitle: {
     color: "white",
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: "bold",
   },
 
-  countBox: {
+  countBadge: {
     backgroundColor: "white",
-    minWidth: 45,
-    height: 30,
-    borderRadius: 15,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 8,
   },
 
   countText: {
     color: "#6C63FF",
+    fontSize: 15,
     fontWeight: "bold",
-    marginLeft: 4,
+    marginLeft: 5,
   },
 
-  // LIST
-  list: {
-    padding: 15,
+  summaryCard: {
+    backgroundColor: "white",
+    margin: 15,
+    borderRadius: 15,
+    paddingVertical: 15,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    elevation: 2,
+  },
+
+  summaryItem: {
+    alignItems: "center",
+    flex: 1,
+  },
+
+  summaryNumber: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#6C63FF",
+  },
+
+  summaryLabel: {
+    color: "#777",
+    fontSize: 12,
+    marginTop: 3,
+  },
+
+  divider: {
+    width: 1,
+    backgroundColor: "#eee",
+  },
+
+  searchBox: {
+    backgroundColor: "white",
+    marginHorizontal: 15,
+    height: 48,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    elevation: 1,
+  },
+
+  searchInput: {
+    flex: 1,
+    marginLeft: 9,
+    fontSize: 15,
+  },
+
+  filterContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+  },
+
+  filterButton: {
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginRight: 8,
+  },
+
+  selectedFilter: {
+    backgroundColor: "#6C63FF",
+    borderColor: "#6C63FF",
+  },
+
+  filterText: {
+    color: "#555",
+    fontWeight: "600",
+    fontSize: 13,
+  },
+
+  selectedFilterText: {
+    color: "white",
+  },
+
+  listContent: {
+    paddingHorizontal: 15,
     paddingBottom: 30,
+  },
+
+  emptyList: {
     flexGrow: 1,
   },
 
-  // INFORMATION CARD
-  infoCard: {
-    backgroundColor: "#EEEEFF",
-    borderRadius: 12,
-    padding: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-
-  infoCardText: {
-    flex: 1,
-    marginLeft: 8,
-    color: "#555",
-    fontSize: 13,
-    lineHeight: 18,
-  },
-
-  // REGISTRATION CARD
   card: {
     backgroundColor: "white",
     borderRadius: 16,
-    padding: 15,
-    marginBottom: 15,
-    flexDirection: "row",
+    padding: 16,
+    marginBottom: 14,
     elevation: 2,
+  },
+
+  cardTop: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   iconBox: {
@@ -636,140 +843,117 @@ const styles = StyleSheet.create({
     backgroundColor: "#EEEEFF",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
   },
 
-  content: {
+  titleContainer: {
     flex: 1,
+    marginLeft: 12,
   },
 
-  // TITLE
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-  },
-
-  title: {
-    flex: 1,
+  eventTitle: {
     fontSize: 17,
     fontWeight: "bold",
     color: "#222",
-    marginRight: 7,
-  },
-
-  // STATUS
-  statusBadge: {
-    backgroundColor: "#E8F7EE",
-    paddingHorizontal: 7,
-    paddingVertical: 5,
-    borderRadius: 8,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  statusText: {
-    color: "#2E8B57",
-    fontSize: 10,
-    fontWeight: "bold",
-    marginLeft: 3,
   },
 
   registrationId: {
     color: "#888",
+    fontSize: 12,
+    marginTop: 4,
+  },
+
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EAF8EF",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+
+  cancelledBadge: {
+    backgroundColor: "#FDECEC",
+  },
+
+  statusText: {
+    color: "#249653",
     fontSize: 11,
-    marginTop: 5,
+    fontWeight: "bold",
+    marginLeft: 3,
+  },
+
+  cancelledText: {
+    color: "#D64545",
   },
 
   category: {
     color: "#6C63FF",
     fontWeight: "600",
-    fontSize: 13,
-    marginTop: 7,
-    marginBottom: 8,
+    marginTop: 10,
+    marginBottom: 7,
   },
 
-  // EVENT INFORMATION
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 5,
+    marginTop: 6,
   },
 
-  info: {
-    marginLeft: 7,
+  infoText: {
     color: "#555",
-    fontSize: 13,
+    marginLeft: 8,
+    fontSize: 14,
   },
 
-  // BUTTONS
   buttonRow: {
     flexDirection: "row",
-    marginTop: 10,
+    marginTop: 15,
+    gap: 10,
   },
 
   detailsButton: {
     flex: 1,
-    height: 38,
-    borderRadius: 8,
     borderWidth: 1,
     borderColor: "#6C63FF",
-    justifyContent: "center",
+    borderRadius: 11,
+    paddingVertical: 11,
     alignItems: "center",
+    justifyContent: "center",
     flexDirection: "row",
-    marginRight: 7,
   },
 
   detailsText: {
     color: "#6C63FF",
     fontWeight: "bold",
-    fontSize: 12,
-    marginLeft: 5,
+    marginLeft: 6,
   },
 
   cancelButton: {
-    flex: 1,
-    height: 38,
-    borderRadius: 8,
-    backgroundColor: "#E74C3C",
-    justifyContent: "center",
+    flex: 0.65,
+    backgroundColor: "#E94B3C",
+    borderRadius: 11,
+    paddingVertical: 11,
     alignItems: "center",
+    justifyContent: "center",
     flexDirection: "row",
-    marginLeft: 7,
   },
 
   cancelText: {
     color: "white",
     fontWeight: "bold",
-    fontSize: 12,
     marginLeft: 5,
   },
 
-  // LOADING
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  loadingText: {
-    marginTop: 10,
-    color: "#666",
-  },
-
-  // EMPTY
   emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 30,
-    minHeight: 500,
+    justifyContent: "center",
+    paddingTop: 80,
   },
 
-  emptyIconCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+  emptyIcon: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     backgroundColor: "#EEEEFF",
     justifyContent: "center",
     alignItems: "center",
@@ -784,155 +968,138 @@ const styles = StyleSheet.create({
 
   emptyText: {
     color: "#777",
+    fontSize: 15,
+    marginTop: 7,
     textAlign: "center",
-    marginTop: 8,
-    lineHeight: 20,
   },
 
-  eventButton: {
+  browseButton: {
     backgroundColor: "#6C63FF",
     paddingHorizontal: 22,
-    paddingVertical: 12,
-    borderRadius: 10,
+    paddingVertical: 13,
+    borderRadius: 12,
     marginTop: 20,
     flexDirection: "row",
     alignItems: "center",
   },
 
-  eventButtonText: {
+  browseButtonText: {
     color: "white",
     fontWeight: "bold",
     marginLeft: 7,
+    fontSize: 15,
   },
 
-  // =========================
-  // MODAL
-  // =========================
-
-  modalOverlay: {
+  loadingContainer: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  loadingText: {
+    color: "#777",
+    marginTop: 10,
+  },
+
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
   },
 
-  modalBox: {
+  modalContainer: {
     width: "100%",
+    maxWidth: 500,
     backgroundColor: "white",
-    borderRadius: 22,
-    padding: 25,
-    alignItems: "center",
+    borderRadius: 20,
+    padding: 22,
   },
 
-  modalCloseIcon: {
-    position: "absolute",
-    right: 15,
-    top: 15,
-    width: 35,
-    height: 35,
-    borderRadius: 18,
-    backgroundColor: "#F2F2F2",
-    justifyContent: "center",
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-  },
-
-  successCircle: {
-    width: 75,
-    height: 75,
-    borderRadius: 38,
-    backgroundColor: "#E8F7EE",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 10,
   },
 
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#222",
-    marginTop: 15,
+  },
+
+  modalIcon: {
+    width: 75,
+    height: 75,
+    borderRadius: 40,
+    backgroundColor: "#EAF8EF",
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    marginVertical: 15,
   },
 
   modalEventTitle: {
-    fontSize: 16,
-    color: "#555",
+    fontSize: 21,
+    fontWeight: "bold",
     textAlign: "center",
-    marginTop: 8,
-    fontWeight: "600",
+    color: "#222",
   },
 
   modalStatus: {
-    backgroundColor: "#E8F7EE",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    alignSelf: "center",
+    backgroundColor: "#EAF8EF",
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
+    marginTop: 8,
+    marginBottom: 15,
+  },
+
+  modalCancelled: {
+    backgroundColor: "#FDECEC",
   },
 
   modalStatusText: {
-    color: "#2E8B57",
+    color: "#249653",
     fontWeight: "bold",
-    marginLeft: 5,
-    fontSize: 12,
   },
 
-  detailsContainer: {
-    width: "100%",
-    marginTop: 20,
-    backgroundColor: "#F7F7FB",
-    borderRadius: 15,
-    padding: 15,
+  modalCancelledText: {
+    color: "#D64545",
   },
 
-  detailRow: {
+  modalInfoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 13,
+    marginVertical: 8,
   },
 
-  detailRowLast: {
-    marginBottom: 0,
-  },
-
-  detailIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: "#EEEEFF",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-
-  detailLabel: {
-    fontSize: 11,
+  modalLabel: {
     color: "#888",
-    marginBottom: 2,
+    fontSize: 12,
+    marginLeft: 12,
   },
 
-  detailValue: {
-    fontSize: 14,
+  modalValue: {
     color: "#333",
-    fontWeight: "600",
-  },
-
-  closeButton: {
-    width: "100%",
-    height: 45,
-    backgroundColor: "#6C63FF",
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 20,
-  },
-
-  closeButtonText: {
-    color: "white",
     fontSize: 15,
-    fontWeight: "bold",
+    fontWeight: "600",
+    marginLeft: 12,
   },
 
+  modalCloseButton: {
+    backgroundColor: "#6C63FF",
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: "center",
+    marginTop: 18,
+  },
+
+  modalCloseText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 15,
+  },
 });
