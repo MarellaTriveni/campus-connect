@@ -1,123 +1,135 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
   StyleSheet,
-  TextInput,
-  TouchableOpacity,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 const HomeScreen = ({ navigation }) => {
-  const [search, setSearch] = useState("");
+  // Upcoming Event
+  const upcomingEvent = {
+    title: "Coding Contest",
+    category: "Technical",
+    date: "15 September 2026",
+    time: "11:00 AM",
+    venue: "Computer Lab",
+  };
 
+  // Calculate days remaining
+  const calculateDaysLeft = () => {
+    const eventDate = new Date(2026, 8, 15);
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+    eventDate.setHours(0, 0, 0, 0);
+
+    const difference = eventDate - today;
+    return Math.max(
+      Math.ceil(difference / (1000 * 60 * 60 * 24)),
+      0
+    );
+  };
+
+  const daysLeft = calculateDaysLeft();
+
+  // Latest Notices
   const notices = [
     {
       id: "1",
       title: "React Native Workshop",
-      category: "Events",
-      description: "Workshop on React Native development.",
+      date: "10 September 2026",
+      icon: "code-slash-outline",
     },
     {
       id: "2",
-      title: "Placement Drive",
-      category: "Placement",
-      description: "Placement drive for final year students.",
+      title: "Hackathon Registration Open",
+      date: "12 September 2026",
+      icon: "trophy-outline",
     },
     {
       id: "3",
-      title: "Semester Exams",
-      category: "Academic",
-      description: "Semester examination schedule announced.",
+      title: "Placement Drive",
+      date: "15 September 2026",
+      icon: "briefcase-outline",
     },
   ];
 
-  const filteredNotices = notices.filter(
-    (notice) =>
-      notice.title.toLowerCase().includes(search.toLowerCase()) ||
-      notice.description.toLowerCase().includes(search.toLowerCase())
-  );
-
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.smallHeaderText}>
+            CAMPUS CONNECT
+          </Text>
 
-        {/* HEADER */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.welcomeText}>
-              Welcome Back 
-            </Text>
-
-            <Text style={styles.appTitle}>
-              Campus Connect
-            </Text>
-          </View>
-
-          {/* ONLY NOTIFICATION ICON */}
-          <TouchableOpacity
-            style={styles.notificationButton}
-            onPress={() => navigation.navigate("Notifications")}
-          >
-            <Ionicons
-              name="notifications-outline"
-              size={27}
-              color="#6C63FF"
-            />
-
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>2</Text>
-            </View>
-          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            Student Dashboard
+          </Text>
         </View>
 
-        {/* WELCOME CARD */}
+        <TouchableOpacity
+          style={styles.notificationButton}
+          onPress={() =>
+            navigation.navigate("Notifications")
+          }
+        >
+          <Ionicons
+            name="notifications-outline"
+            size={25}
+            color="white"
+          />
+
+          <View style={styles.notificationBadge}>
+            <Text style={styles.badgeText}>3</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Welcome Card */}
         <View style={styles.welcomeCard}>
-          <View style={styles.welcomeContent}>
-            <Text style={styles.helloText}>
-              Hello, Student!
+          <View style={styles.welcomeText}>
+            <Text style={styles.welcomeSmall}>
+              Welcome back 👋
+            </Text>
+
+            <Text style={styles.welcomeTitle}>
+              Triveni
             </Text>
 
             <Text style={styles.welcomeDescription}>
-              Stay updated with college notices, events and announcements.
+              Stay updated with your campus activities.
             </Text>
           </View>
 
-          <Ionicons
-            name="school-outline"
-            size={65}
-            color="white"
-          />
+          <View style={styles.welcomeIcon}>
+            <Ionicons
+              name="school-outline"
+              size={42}
+              color="#6C63FF"
+            />
+          </View>
         </View>
 
-        {/* SEARCH */}
-        <View style={styles.searchBox}>
-          <Ionicons
-            name="search-outline"
-            size={22}
-            color="#777"
-          />
-
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search notices..."
-            value={search}
-            onChangeText={setSearch}
-          />
-        </View>
-
-        {/* QUICK ACTIONS */}
+        {/* Quick Actions */}
         <Text style={styles.sectionTitle}>
           Quick Actions
         </Text>
 
         <View style={styles.quickGrid}>
-
-          {/* Notices */}
+          {/* Notifications */}
           <TouchableOpacity
             style={styles.quickCard}
-            onPress={() => navigation.navigate("Notices")}
+            onPress={() =>
+              navigation.navigate("Notifications")
+            }
           >
             <View style={styles.quickIcon}>
               <Ionicons
@@ -127,15 +139,21 @@ const HomeScreen = ({ navigation }) => {
               />
             </View>
 
-            <Text style={styles.quickText}>
-              Notices
+            <Text style={styles.quickTitle}>
+              Notifications
+            </Text>
+
+            <Text style={styles.quickSub}>
+              3 new
             </Text>
           </TouchableOpacity>
 
           {/* Events */}
           <TouchableOpacity
             style={styles.quickCard}
-            onPress={() => navigation.navigate("Events")}
+            onPress={() =>
+              navigation.navigate("Events")
+            }
           >
             <View style={styles.quickIcon}>
               <Ionicons
@@ -145,15 +163,45 @@ const HomeScreen = ({ navigation }) => {
               />
             </View>
 
-            <Text style={styles.quickText}>
+            <Text style={styles.quickTitle}>
               Events
+            </Text>
+
+            <Text style={styles.quickSub}>
+              Explore events
+            </Text>
+          </TouchableOpacity>
+
+          {/* Notices */}
+          <TouchableOpacity
+            style={styles.quickCard}
+            onPress={() =>
+              navigation.navigate("Notices")
+            }
+          >
+            <View style={styles.quickIcon}>
+              <Ionicons
+                name="megaphone-outline"
+                size={25}
+                color="#6C63FF"
+              />
+            </View>
+
+            <Text style={styles.quickTitle}>
+              Notices
+            </Text>
+
+            <Text style={styles.quickSub}>
+              Latest updates
             </Text>
           </TouchableOpacity>
 
           {/* Profile */}
           <TouchableOpacity
             style={styles.quickCard}
-            onPress={() => navigation.navigate("Profile")}
+            onPress={() =>
+              navigation.navigate("Profile")
+            }
           >
             <View style={styles.quickIcon}>
               <Ionicons
@@ -163,71 +211,26 @@ const HomeScreen = ({ navigation }) => {
               />
             </View>
 
-            <Text style={styles.quickText}>
+            <Text style={styles.quickTitle}>
               Profile
             </Text>
-          </TouchableOpacity>
 
-          {/* Saved */}
-          <TouchableOpacity
-            style={styles.quickCard}
-            onPress={() => navigation.navigate("Saved")}
-          >
-            <View style={styles.quickIcon}>
-              <Ionicons
-                name="bookmark-outline"
-                size={25}
-                color="#6C63FF"
-              />
-            </View>
-
-            <Text style={styles.quickText}>
-              Saved
+            <Text style={styles.quickSub}>
+              View profile
             </Text>
           </TouchableOpacity>
-
         </View>
 
-        {/* MY REGISTRATIONS */}
-        <TouchableOpacity
-          style={styles.registrationCard}
-          onPress={() =>
-            navigation.navigate("MyRegistrations")
-          }
-        >
-          <View style={styles.registrationIcon}>
-            <Ionicons
-              name="clipboard-outline"
-              size={26}
-              color="#6C63FF"
-            />
-          </View>
-
-          <View style={styles.registrationContent}>
-            <Text style={styles.registrationTitle}>
-              My Registrations
-            </Text>
-
-            <Text style={styles.registrationSubtitle}>
-              View your registered events
-            </Text>
-          </View>
-
-          <Ionicons
-            name="chevron-forward"
-            size={23}
-            color="#777"
-          />
-        </TouchableOpacity>
-
-        {/* LATEST NOTICES */}
+        {/* Upcoming Event */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>
-            Latest Notices
+            Upcoming Event
           </Text>
 
           <TouchableOpacity
-            onPress={() => navigation.navigate("Notice")}
+            onPress={() =>
+              navigation.navigate("Events")
+            }
           >
             <Text style={styles.viewAll}>
               View All
@@ -235,15 +238,121 @@ const HomeScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {filteredNotices.map((notice) => (
+        <View style={styles.eventCard}>
+          <View style={styles.eventTop}>
+            <View style={styles.eventIcon}>
+              <Ionicons
+                name="trophy-outline"
+                size={30}
+                color="#6C63FF"
+              />
+            </View>
+
+            <View style={styles.eventInfo}>
+              <Text style={styles.eventCategory}>
+                {upcomingEvent.category}
+              </Text>
+
+              <Text style={styles.eventTitle}>
+                {upcomingEvent.title}
+              </Text>
+            </View>
+
+            <View style={styles.daysBox}>
+              <Text style={styles.daysNumber}>
+                {daysLeft}
+              </Text>
+
+              <Text style={styles.daysText}>
+                DAYS
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.eventDetailRow}>
+            <Ionicons
+              name="calendar-outline"
+              size={18}
+              color="#666"
+            />
+
+            <Text style={styles.eventDetail}>
+              {upcomingEvent.date}
+            </Text>
+          </View>
+
+          <View style={styles.eventDetailRow}>
+            <Ionicons
+              name="time-outline"
+              size={18}
+              color="#666"
+            />
+
+            <Text style={styles.eventDetail}>
+              {upcomingEvent.time}
+            </Text>
+          </View>
+
+          <View style={styles.eventDetailRow}>
+            <Ionicons
+              name="location-outline"
+              size={18}
+              color="#666"
+            />
+
+            <Text style={styles.eventDetail}>
+              {upcomingEvent.venue}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.eventButton}
+            onPress={() =>
+              navigation.navigate("Events")
+            }
+          >
+            <Text style={styles.eventButtonText}>
+              View Event
+            </Text>
+
+            <Ionicons
+              name="arrow-forward"
+              size={18}
+              color="white"
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Latest Notices */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>
+            Latest Notices
+          </Text>
+
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("Notices")
+            }
+          >
+            <Text style={styles.viewAll}>
+              View All
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {notices.map((notice) => (
           <TouchableOpacity
             key={notice.id}
             style={styles.noticeCard}
-            onPress={() => navigation.navigate("Notice")}
+            onPress={() =>
+              navigation.navigate("Notices")
+            }
           >
             <View style={styles.noticeIcon}>
               <Ionicons
-                name="megaphone-outline"
+                name={notice.icon}
                 size={23}
                 color="#6C63FF"
               />
@@ -254,54 +363,41 @@ const HomeScreen = ({ navigation }) => {
                 {notice.title}
               </Text>
 
-              <Text style={styles.noticeCategory}>
-                {notice.category}
-              </Text>
-
-              <Text
-                style={styles.noticeDescription}
-                numberOfLines={1}
-              >
-                {notice.description}
+              <Text style={styles.noticeDate}>
+                {notice.date}
               </Text>
             </View>
 
             <Ionicons
               name="chevron-forward"
               size={20}
-              color="#888"
+              color="#999"
             />
           </TouchableOpacity>
         ))}
 
-        {/* UPCOMING EVENT */}
-        <Text style={styles.sectionTitle}>
-          Upcoming Event
-        </Text>
-
+        {/* My Registrations */}
         <TouchableOpacity
-          style={styles.eventCard}
-          onPress={() => navigation.navigate("Event")}
+          style={styles.registrationCard}
+          onPress={() =>
+            navigation.navigate("MyRegistrations")
+          }
         >
-          <View style={styles.eventIcon}>
+          <View style={styles.registrationIcon}>
             <Ionicons
-              name="calendar"
-              size={30}
+              name="clipboard-outline"
+              size={28}
               color="#6C63FF"
             />
           </View>
 
-          <View style={styles.eventContent}>
-            <Text style={styles.eventTitle}>
-              React Native Workshop
+          <View style={styles.registrationContent}>
+            <Text style={styles.registrationTitle}>
+              My Registrations
             </Text>
 
-            <Text style={styles.eventDate}>
-              10 September 2026
-            </Text>
-
-            <Text style={styles.eventVenue}>
-              Seminar Hall
+            <Text style={styles.registrationSub}>
+              View your registered events
             </Text>
           </View>
 
@@ -312,7 +408,37 @@ const HomeScreen = ({ navigation }) => {
           />
         </TouchableOpacity>
 
-        <View style={{ height: 25 }} />
+        {/* Saved Items */}
+        <TouchableOpacity
+          style={styles.registrationCard}
+          onPress={() =>
+            navigation.navigate("Saved")
+          }
+        >
+          <View style={styles.registrationIcon}>
+            <Ionicons
+              name="bookmark-outline"
+              size={28}
+              color="#6C63FF"
+            />
+          </View>
+
+          <View style={styles.registrationContent}>
+            <Text style={styles.registrationTitle}>
+              Saved Items
+            </Text>
+
+            <Text style={styles.registrationSub}>
+              View your saved notices and events
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={22}
+            color="#777"
+          />
+        </TouchableOpacity>
 
       </ScrollView>
     </View>
@@ -328,108 +454,107 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    backgroundColor: "white",
-    paddingHorizontal: 25,
-    paddingVertical: 20,
+    backgroundColor: "#6C63FF",
+    paddingHorizontal: 20,
+    paddingTop: 45,
+    paddingBottom: 20,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
 
-  headerLeft: {
-    flex: 1,
+  smallHeaderText: {
+    color: "#DCD9FF",
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 1,
   },
 
-  welcomeText: {
-    color: "#777",
-    fontSize: 16,
-    marginBottom: 5,
-  },
-
-  appTitle: {
-    color: "#222",
-    fontSize: 28,
+  headerTitle: {
+    color: "white",
+    fontSize: 20,
     fontWeight: "bold",
+    marginTop: 3,
   },
 
   notificationButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#EEEEFF",
+    width: 45,
+    height: 45,
+    borderRadius: 23,
+    backgroundColor: "#5B53D6",
     justifyContent: "center",
     alignItems: "center",
   },
 
-  badge: {
+  notificationBadge: {
     position: "absolute",
     right: -2,
-    top: -3,
-    backgroundColor: "#FF4D5A",
+    top: -2,
     width: 19,
     height: 19,
     borderRadius: 10,
+    backgroundColor: "#FF4D6D",
     justifyContent: "center",
     alignItems: "center",
   },
 
   badgeText: {
     color: "white",
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "bold",
+  },
+
+  scrollContent: {
+    padding: 15,
+    paddingBottom: 30,
   },
 
   welcomeCard: {
-    margin: 20,
-    padding: 25,
-    backgroundColor: "#6C63FF",
-    borderRadius: 22,
+    backgroundColor: "white",
+    borderRadius: 18,
+    padding: 18,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    elevation: 3,
+    marginBottom: 20,
   },
 
-  welcomeContent: {
+  welcomeText: {
     flex: 1,
-    marginRight: 10,
   },
 
-  helloText: {
-    color: "white",
+  welcomeSmall: {
+    color: "#777",
+    fontSize: 13,
+  },
+
+  welcomeTitle: {
+    color: "#222",
     fontSize: 25,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginTop: 3,
   },
 
   welcomeDescription: {
-    color: "white",
-    fontSize: 15,
-    lineHeight: 22,
+    color: "#777",
+    fontSize: 13,
+    marginTop: 5,
   },
 
-  searchBox: {
-    backgroundColor: "white",
-    marginHorizontal: 20,
-    height: 55,
-    borderRadius: 15,
-    flexDirection: "row",
+  welcomeIcon: {
+    width: 65,
+    height: 65,
+    borderRadius: 33,
+    backgroundColor: "#EEEEFF",
+    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 16,
-    elevation: 2,
-  },
-
-  searchInput: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 15,
   },
 
   sectionTitle: {
-    fontSize: 21,
+    fontSize: 19,
     fontWeight: "bold",
     color: "#222",
-    marginHorizontal: 20,
-    marginTop: 25,
     marginBottom: 12,
   },
 
@@ -437,70 +562,37 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
+    marginBottom: 20,
   },
 
   quickCard: {
     width: "48%",
     backgroundColor: "white",
     borderRadius: 15,
-    padding: 17,
+    padding: 15,
     marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
     elevation: 2,
   },
 
   quickIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 45,
+    height: 45,
+    borderRadius: 12,
     backgroundColor: "#EEEEFF",
     justifyContent: "center",
     alignItems: "center",
+    marginBottom: 10,
   },
 
-  quickText: {
-    marginLeft: 10,
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-
-  registrationCard: {
-    backgroundColor: "white",
-    marginHorizontal: 20,
-    marginTop: 2,
-    padding: 16,
-    borderRadius: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    elevation: 2,
-  },
-
-  registrationIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: "#EEEEFF",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  registrationContent: {
-    flex: 1,
-    marginLeft: 12,
-  },
-
-  registrationTitle: {
-    fontSize: 16,
+  quickTitle: {
+    fontSize: 15,
     fontWeight: "bold",
     color: "#222",
   },
 
-  registrationSubtitle: {
+  quickSub: {
+    color: "#888",
     fontSize: 12,
-    color: "#777",
     marginTop: 4,
   },
 
@@ -508,67 +600,26 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginRight: 20,
   },
 
   viewAll: {
     color: "#6C63FF",
-    fontWeight: "bold",
-    marginTop: 25,
-  },
-
-  noticeCard: {
-    backgroundColor: "white",
-    marginHorizontal: 20,
-    marginBottom: 12,
-    padding: 15,
-    borderRadius: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    elevation: 2,
-  },
-
-  noticeIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 13,
-    backgroundColor: "#EEEEFF",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  noticeContent: {
-    flex: 1,
-    marginLeft: 12,
-  },
-
-  noticeTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#222",
-  },
-
-  noticeCategory: {
-    color: "#6C63FF",
-    fontSize: 12,
     fontWeight: "600",
-    marginTop: 3,
-  },
-
-  noticeDescription: {
-    color: "#777",
-    fontSize: 12,
-    marginTop: 3,
+    fontSize: 13,
+    marginBottom: 12,
   },
 
   eventCard: {
     backgroundColor: "white",
-    marginHorizontal: 20,
-    borderRadius: 15,
-    padding: 16,
+    borderRadius: 18,
+    padding: 17,
+    marginBottom: 22,
+    elevation: 3,
+  },
+
+  eventTop: {
     flexDirection: "row",
     alignItems: "center",
-    elevation: 2,
   },
 
   eventIcon: {
@@ -580,26 +631,148 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  eventContent: {
+  eventInfo: {
     flex: 1,
     marginLeft: 12,
   },
 
+  eventCategory: {
+    color: "#6C63FF",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+
   eventTitle: {
-    fontSize: 16,
+    fontSize: 17,
+    fontWeight: "bold",
+    color: "#222",
+    marginTop: 3,
+  },
+
+  daysBox: {
+    backgroundColor: "#EEEEFF",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+
+  daysNumber: {
+    color: "#6C63FF",
+    fontSize: 21,
+    fontWeight: "bold",
+  },
+
+  daysText: {
+    color: "#6C63FF",
+    fontSize: 9,
+    fontWeight: "bold",
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: "#eee",
+    marginVertical: 14,
+  },
+
+  eventDetailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+
+  eventDetail: {
+    color: "#666",
+    fontSize: 13,
+    marginLeft: 8,
+  },
+
+  eventButton: {
+    backgroundColor: "#6C63FF",
+    borderRadius: 11,
+    paddingVertical: 12,
+    marginTop: 8,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  eventButtonText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "bold",
+    marginRight: 7,
+  },
+
+  noticeCard: {
+    backgroundColor: "white",
+    borderRadius: 14,
+    padding: 13,
+    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    elevation: 2,
+  },
+
+  noticeIcon: {
+    width: 45,
+    height: 45,
+    borderRadius: 12,
+    backgroundColor: "#EEEEFF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  noticeContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+
+  noticeTitle: {
+    fontSize: 14,
     fontWeight: "bold",
     color: "#222",
   },
 
-  eventDate: {
-    color: "#6C63FF",
-    marginTop: 5,
-    fontSize: 13,
+  noticeDate: {
+    fontSize: 12,
+    color: "#888",
+    marginTop: 4,
   },
 
-  eventVenue: {
-    color: "#777",
-    marginTop: 3,
+  registrationCard: {
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 15,
+    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    elevation: 2,
+  },
+
+  registrationIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 13,
+    backgroundColor: "#EEEEFF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  registrationContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+
+  registrationTitle: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#222",
+  },
+
+  registrationSub: {
     fontSize: 12,
+    color: "#888",
+    marginTop: 4,
   },
 });
