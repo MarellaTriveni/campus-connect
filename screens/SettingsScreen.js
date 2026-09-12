@@ -13,6 +13,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SETTINGS_KEY = "email_notification_settings";
 
+const defaultSettings = {
+  emailNotifications: true,
+  registrationEmails: true,
+  noticeEmails: true,
+  reminderEmails: true,
+};
+
 const SettingsScreen = ({ navigation }) => {
   const [emailNotifications, setEmailNotifications] =
     useState(true);
@@ -30,14 +37,15 @@ const SettingsScreen = ({ navigation }) => {
     loadSettings();
   }, []);
 
+  // Load saved settings
   const loadSettings = async () => {
     try {
-      const savedSettings = await AsyncStorage.getItem(
+      const saved = await AsyncStorage.getItem(
         SETTINGS_KEY
       );
 
-      if (savedSettings) {
-        const settings = JSON.parse(savedSettings);
+      if (saved) {
+        const settings = JSON.parse(saved);
 
         setEmailNotifications(
           settings.emailNotifications
@@ -47,15 +55,20 @@ const SettingsScreen = ({ navigation }) => {
           settings.registrationEmails
         );
 
-        setNoticeEmails(settings.noticeEmails);
+        setNoticeEmails(
+          settings.noticeEmails
+        );
 
-        setReminderEmails(settings.reminderEmails);
+        setReminderEmails(
+          settings.reminderEmails
+        );
       }
     } catch (error) {
-      console.log("Error loading settings:", error);
+      console.log("Load error:", error);
     }
   };
 
+  // Save settings
   const saveSettings = async () => {
     try {
       const settings = {
@@ -71,11 +84,11 @@ const SettingsScreen = ({ navigation }) => {
       );
 
       Alert.alert(
-        "Settings Saved",
-        "Your notification settings have been saved."
+        "Success",
+        "Notification settings saved successfully."
       );
     } catch (error) {
-      console.log("Error saving settings:", error);
+      console.log("Save error:", error);
 
       Alert.alert(
         "Error",
@@ -84,6 +97,7 @@ const SettingsScreen = ({ navigation }) => {
     }
   };
 
+  // Main notification switch
   const toggleEmailNotifications = (value) => {
     setEmailNotifications(value);
 
@@ -94,8 +108,62 @@ const SettingsScreen = ({ navigation }) => {
     }
   };
 
+  // Test notification
+  const testNotification = () => {
+    if (!emailNotifications) {
+      Alert.alert(
+        "Notifications Disabled",
+        "Please turn ON Email Notifications first."
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Test Notification",
+      "Test notification is working successfully! 📧"
+    );
+  };
+
+  // Reset settings
+  const resetSettings = () => {
+    Alert.alert(
+      "Reset Settings",
+      "Do you want to reset all notification settings?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Reset",
+          onPress: async () => {
+            try {
+              await AsyncStorage.setItem(
+                SETTINGS_KEY,
+                JSON.stringify(defaultSettings)
+              );
+
+              setEmailNotifications(true);
+              setRegistrationEmails(true);
+              setNoticeEmails(true);
+              setReminderEmails(true);
+
+              Alert.alert(
+                "Reset Complete",
+                "Notification settings restored to default."
+              );
+            } catch (error) {
+              console.log("Reset error:", error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -119,14 +187,17 @@ const SettingsScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        {/* Email Section */}
+
+        {/* Email Notifications */}
         <Text style={styles.sectionTitle}>
           Email Notifications
         </Text>
 
         <View style={styles.card}>
-          {/* Main Email Switch */}
+
+          {/* Main switch */}
           <View style={styles.settingRow}>
+
             <View style={styles.iconBox}>
               <Ionicons
                 name="mail-outline"
@@ -151,12 +222,14 @@ const SettingsScreen = ({ navigation }) => {
                 toggleEmailNotifications
               }
             />
+
           </View>
 
           <View style={styles.divider} />
 
-          {/* Registration Emails */}
+          {/* Registration */}
           <View style={styles.settingRow}>
+
             <View style={styles.iconBox}>
               <Ionicons
                 name="checkmark-circle-outline"
@@ -171,7 +244,7 @@ const SettingsScreen = ({ navigation }) => {
               </Text>
 
               <Text style={styles.settingSubtitle}>
-                Get an email after event registration
+                Email after successful event registration
               </Text>
             </View>
 
@@ -180,12 +253,14 @@ const SettingsScreen = ({ navigation }) => {
               onValueChange={setRegistrationEmails}
               disabled={!emailNotifications}
             />
+
           </View>
 
           <View style={styles.divider} />
 
-          {/* Notice Emails */}
+          {/* Notice */}
           <View style={styles.settingRow}>
+
             <View style={styles.iconBox}>
               <Ionicons
                 name="megaphone-outline"
@@ -209,12 +284,14 @@ const SettingsScreen = ({ navigation }) => {
               onValueChange={setNoticeEmails}
               disabled={!emailNotifications}
             />
+
           </View>
 
           <View style={styles.divider} />
 
-          {/* Reminder Emails */}
+          {/* Event reminders */}
           <View style={styles.settingRow}>
+
             <View style={styles.iconBox}>
               <Ionicons
                 name="alarm-outline"
@@ -229,7 +306,7 @@ const SettingsScreen = ({ navigation }) => {
               </Text>
 
               <Text style={styles.settingSubtitle}>
-                Get reminders before registered events
+                Receive reminders before events
               </Text>
             </View>
 
@@ -238,24 +315,61 @@ const SettingsScreen = ({ navigation }) => {
               onValueChange={setReminderEmails}
               disabled={!emailNotifications}
             />
+
           </View>
+
         </View>
 
-        {/* Information */}
-        <View style={styles.infoCard}>
+        {/* Status Card */}
+        <View style={styles.statusCard}>
+
           <Ionicons
-            name="information-circle-outline"
-            size={23}
+            name={
+              emailNotifications
+                ? "checkmark-circle"
+                : "close-circle"
+            }
+            size={25}
+            color={
+              emailNotifications
+                ? "#2E9B5B"
+                : "#D64545"
+            }
+          />
+
+          <View style={styles.statusContent}>
+
+            <Text style={styles.statusTitle}>
+              Email Status
+            </Text>
+
+            <Text style={styles.statusText}>
+              {emailNotifications
+                ? "Email notifications are enabled"
+                : "Email notifications are disabled"}
+            </Text>
+
+          </View>
+
+        </View>
+
+        {/* Test Notification */}
+        <TouchableOpacity
+          style={styles.testButton}
+          onPress={testNotification}
+        >
+          <Ionicons
+            name="mail-open-outline"
+            size={21}
             color="#6C63FF"
           />
 
-          <Text style={styles.infoText}>
-            These settings control which email updates
-            you want to receive from Campus Connect.
+          <Text style={styles.testButtonText}>
+            Test Notification
           </Text>
-        </View>
+        </TouchableOpacity>
 
-        {/* Save Button */}
+        {/* Save */}
         <TouchableOpacity
           style={styles.saveButton}
           onPress={saveSettings}
@@ -270,6 +384,40 @@ const SettingsScreen = ({ navigation }) => {
             Save Settings
           </Text>
         </TouchableOpacity>
+
+        {/* Reset */}
+        <TouchableOpacity
+          style={styles.resetButton}
+          onPress={resetSettings}
+        >
+          <Ionicons
+            name="refresh-outline"
+            size={20}
+            color="#D64545"
+          />
+
+          <Text style={styles.resetText}>
+            Reset Settings
+          </Text>
+        </TouchableOpacity>
+
+        {/* Information */}
+        <View style={styles.infoCard}>
+
+          <Ionicons
+            name="information-circle-outline"
+            size={23}
+            color="#6C63FF"
+          />
+
+          <Text style={styles.infoText}>
+            You can change these preferences anytime.
+            Actual email delivery will require a backend
+            email service.
+          </Text>
+
+        </View>
+
       </ScrollView>
     </View>
   );
@@ -357,13 +505,90 @@ const styles = StyleSheet.create({
     backgroundColor: "#EEEEEE",
   },
 
+  statusCard: {
+    backgroundColor: "white",
+    borderRadius: 14,
+    padding: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    elevation: 2,
+    marginBottom: 15,
+  },
+
+  statusContent: {
+    marginLeft: 10,
+  },
+
+  statusTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#222",
+  },
+
+  statusText: {
+    fontSize: 12,
+    color: "#777",
+    marginTop: 4,
+  },
+
+  testButton: {
+    height: 48,
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: "#6C63FF",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+
+  testButtonText: {
+    color: "#6C63FF",
+    fontSize: 14,
+    fontWeight: "bold",
+    marginLeft: 8,
+  },
+
+  saveButton: {
+    height: 50,
+    borderRadius: 11,
+    backgroundColor: "#6C63FF",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+
+  saveText: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "bold",
+    marginLeft: 8,
+  },
+
+  resetButton: {
+    height: 48,
+    borderRadius: 11,
+    backgroundColor: "#FFF0F0",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+
+  resetText: {
+    color: "#D64545",
+    fontSize: 14,
+    fontWeight: "bold",
+    marginLeft: 7,
+  },
+
   infoCard: {
     backgroundColor: "#EEEEFF",
     borderRadius: 14,
     padding: 15,
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: 20,
   },
 
   infoText: {
@@ -372,21 +597,5 @@ const styles = StyleSheet.create({
     color: "#555",
     fontSize: 13,
     lineHeight: 19,
-  },
-
-  saveButton: {
-    height: 50,
-    borderRadius: 12,
-    backgroundColor: "#6C63FF",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  saveText: {
-    color: "white",
-    fontSize: 15,
-    fontWeight: "bold",
-    marginLeft: 8,
   },
 });
