@@ -1,81 +1,103 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 const HomeScreen = ({ navigation }) => {
-  // Upcoming Event
-  const upcomingEvent = {
-    title: "Coding Contest",
-    category: "Technical",
-    date: "15 September 2026",
-    time: "11:00 AM",
-    venue: "Computer Lab",
-  };
+  const [daysLeft, setDaysLeft] = useState(0);
 
-  // Calculate days remaining
+  // Upcoming event date
+  const eventDate = new Date(2026, 8, 15); // 15 September 2026
+
+  useEffect(() => {
+    calculateDaysLeft();
+
+    const timer = setInterval(() => {
+      calculateDaysLeft();
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   const calculateDaysLeft = () => {
-    const eventDate = new Date(2026, 8, 15);
     const today = new Date();
 
     today.setHours(0, 0, 0, 0);
     eventDate.setHours(0, 0, 0, 0);
 
     const difference = eventDate - today;
-    return Math.max(
-      Math.ceil(difference / (1000 * 60 * 60 * 24)),
-      0
+    const days = Math.ceil(
+      difference / (1000 * 60 * 60 * 24)
+    );
+
+    setDaysLeft(Math.max(days, 0));
+  };
+
+  // Quick action navigation
+  const openNotifications = () => {
+    navigation.navigate("Notifications");
+  };
+
+  const openEvents = () => {
+    navigation.navigate("Events");
+  };
+
+  const openNotices = () => {
+    navigation.navigate("Notices");
+  };
+
+  const openProfile = () => {
+    navigation.navigate("Profile");
+  };
+
+  const openRegistrations = () => {
+    navigation.navigate("MyRegistrations");
+  };
+
+  const openSaved = () => {
+    navigation.navigate("Saved");
+  };
+
+  const openReminders = () => {
+    navigation.navigate("EventReminders");
+  };
+
+  const showEventDetails = () => {
+    Alert.alert(
+      "Coding Contest",
+      "Date: 15 September 2026\nTime: 11:00 AM\nVenue: Computer Lab",
+      [
+        {
+          text: "Open Events",
+          onPress: () => navigation.navigate("Events"),
+        },
+        {
+          text: "Close",
+          style: "cancel",
+        },
+      ]
     );
   };
 
-  const daysLeft = calculateDaysLeft();
-
-  // Latest Notices
-  const notices = [
-    {
-      id: "1",
-      title: "React Native Workshop",
-      date: "10 September 2026",
-      icon: "code-slash-outline",
-    },
-    {
-      id: "2",
-      title: "Hackathon Registration Open",
-      date: "12 September 2026",
-      icon: "trophy-outline",
-    },
-    {
-      id: "3",
-      title: "Placement Drive",
-      date: "15 September 2026",
-      icon: "briefcase-outline",
-    },
-  ];
-
   return (
     <View style={styles.container}>
+
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.smallHeaderText}>
-            CAMPUS CONNECT
-          </Text>
-
-          <Text style={styles.headerTitle}>
-            Student Dashboard
-          </Text>
+          <Text style={styles.appName}>CAMPUS CONNECT</Text>
+          <Text style={styles.headerSubtitle}>Student Dashboard</Text>
         </View>
 
         <TouchableOpacity
           style={styles.notificationButton}
-          onPress={() =>
-            navigation.navigate("Notifications")
-          }
+          onPress={openNotifications}
         >
           <Ionicons
             name="notifications-outline"
@@ -93,28 +115,29 @@ const HomeScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+
         {/* Welcome Card */}
         <View style={styles.welcomeCard}>
-          <View style={styles.welcomeText}>
+          <View style={styles.welcomeIcon}>
+            <Ionicons
+              name="person"
+              size={28}
+              color="#6C63FF"
+            />
+          </View>
+
+          <View style={styles.welcomeContent}>
             <Text style={styles.welcomeSmall}>
               Welcome back 👋
             </Text>
 
-            <Text style={styles.welcomeTitle}>
+            <Text style={styles.welcomeName}>
               Triveni
             </Text>
 
-            <Text style={styles.welcomeDescription}>
+            <Text style={styles.welcomeMessage}>
               Stay updated with your campus activities.
             </Text>
-          </View>
-
-          <View style={styles.welcomeIcon}>
-            <Ionicons
-              name="school-outline"
-              size={42}
-              color="#6C63FF"
-            />
           </View>
         </View>
 
@@ -123,102 +146,80 @@ const HomeScreen = ({ navigation }) => {
           Quick Actions
         </Text>
 
-        <View style={styles.quickGrid}>
+        <View style={styles.quickActions}>
+
           {/* Notifications */}
           <TouchableOpacity
             style={styles.quickCard}
-            onPress={() =>
-              navigation.navigate("Notifications")
-            }
+            onPress={openNotifications}
           >
             <View style={styles.quickIcon}>
               <Ionicons
                 name="notifications-outline"
-                size={25}
+                size={26}
                 color="#6C63FF"
               />
             </View>
 
-            <Text style={styles.quickTitle}>
+            <Text style={styles.quickText}>
               Notifications
-            </Text>
-
-            <Text style={styles.quickSub}>
-              3 new
             </Text>
           </TouchableOpacity>
 
           {/* Events */}
           <TouchableOpacity
             style={styles.quickCard}
-            onPress={() =>
-              navigation.navigate("Events")
-            }
+            onPress={openEvents}
           >
             <View style={styles.quickIcon}>
               <Ionicons
                 name="calendar-outline"
-                size={25}
+                size={26}
                 color="#6C63FF"
               />
             </View>
 
-            <Text style={styles.quickTitle}>
+            <Text style={styles.quickText}>
               Events
-            </Text>
-
-            <Text style={styles.quickSub}>
-              Explore events
             </Text>
           </TouchableOpacity>
 
           {/* Notices */}
           <TouchableOpacity
             style={styles.quickCard}
-            onPress={() =>
-              navigation.navigate("Notices")
-            }
+            onPress={openNotices}
           >
             <View style={styles.quickIcon}>
               <Ionicons
-                name="megaphone-outline"
-                size={25}
+                name="newspaper-outline"
+                size={26}
                 color="#6C63FF"
               />
             </View>
 
-            <Text style={styles.quickTitle}>
+            <Text style={styles.quickText}>
               Notices
-            </Text>
-
-            <Text style={styles.quickSub}>
-              Latest updates
             </Text>
           </TouchableOpacity>
 
           {/* Profile */}
           <TouchableOpacity
             style={styles.quickCard}
-            onPress={() =>
-              navigation.navigate("Profile")
-            }
+            onPress={openProfile}
           >
             <View style={styles.quickIcon}>
               <Ionicons
                 name="person-outline"
-                size={25}
+                size={26}
                 color="#6C63FF"
               />
             </View>
 
-            <Text style={styles.quickTitle}>
+            <Text style={styles.quickText}>
               Profile
             </Text>
-
-            <Text style={styles.quickSub}>
-              View profile
-            </Text>
           </TouchableOpacity>
+
         </View>
 
         {/* Upcoming Event */}
@@ -227,22 +228,23 @@ const HomeScreen = ({ navigation }) => {
             Upcoming Event
           </Text>
 
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("Events")
-            }
-          >
+          <TouchableOpacity onPress={openEvents}>
             <Text style={styles.viewAll}>
               View All
             </Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.eventCard}>
+        <TouchableOpacity
+          style={styles.eventCard}
+          onPress={showEventDetails}
+        >
+
           <View style={styles.eventTop}>
+
             <View style={styles.eventIcon}>
               <Ionicons
-                name="trophy-outline"
+                name="code-slash-outline"
                 size={30}
                 color="#6C63FF"
               />
@@ -250,11 +252,11 @@ const HomeScreen = ({ navigation }) => {
 
             <View style={styles.eventInfo}>
               <Text style={styles.eventCategory}>
-                {upcomingEvent.category}
+                Technical
               </Text>
 
               <Text style={styles.eventTitle}>
-                {upcomingEvent.title}
+                Coding Contest
               </Text>
             </View>
 
@@ -263,67 +265,96 @@ const HomeScreen = ({ navigation }) => {
                 {daysLeft}
               </Text>
 
-              <Text style={styles.daysText}>
+              <Text style={styles.daysLabel}>
                 DAYS
               </Text>
             </View>
+
           </View>
 
-          <View style={styles.divider} />
+          <View style={styles.eventDivider} />
 
-          <View style={styles.eventDetailRow}>
+          <View style={styles.eventDetail}>
             <Ionicons
               name="calendar-outline"
-              size={18}
-              color="#666"
+              size={17}
+              color="#777"
             />
 
-            <Text style={styles.eventDetail}>
-              {upcomingEvent.date}
+            <Text style={styles.detailText}>
+              15 September 2026
             </Text>
           </View>
 
-          <View style={styles.eventDetailRow}>
+          <View style={styles.eventDetail}>
             <Ionicons
               name="time-outline"
-              size={18}
-              color="#666"
+              size={17}
+              color="#777"
             />
 
-            <Text style={styles.eventDetail}>
-              {upcomingEvent.time}
+            <Text style={styles.detailText}>
+              11:00 AM
             </Text>
           </View>
 
-          <View style={styles.eventDetailRow}>
+          <View style={styles.eventDetail}>
             <Ionicons
               name="location-outline"
-              size={18}
-              color="#666"
+              size={17}
+              color="#777"
             />
 
-            <Text style={styles.eventDetail}>
-              {upcomingEvent.venue}
+            <Text style={styles.detailText}>
+              Computer Lab
             </Text>
           </View>
 
-          <TouchableOpacity
-            style={styles.eventButton}
-            onPress={() =>
-              navigation.navigate("Events")
-            }
-          >
+          <View style={styles.eventButton}>
             <Text style={styles.eventButtonText}>
-              View Event
+              View Event Details
             </Text>
 
             <Ionicons
               name="arrow-forward"
               size={18}
-              color="white"
+              color="#6C63FF"
             />
-          </TouchableOpacity>
-        </View>
+          </View>
+
+        </TouchableOpacity>
+
+        {/* Event Reminders */}
+        <TouchableOpacity
+          style={styles.reminderCard}
+          onPress={openReminders}
+        >
+
+          <View style={styles.reminderIcon}>
+            <Ionicons
+              name="alarm-outline"
+              size={27}
+              color="#6C63FF"
+            />
+          </View>
+
+          <View style={styles.reminderContent}>
+            <Text style={styles.reminderTitle}>
+              Event Reminders
+            </Text>
+
+            <Text style={styles.reminderSubtitle}>
+              Set reminders for upcoming events
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={22}
+            color="#777"
+          />
+
+        </TouchableOpacity>
 
         {/* Latest Notices */}
         <View style={styles.sectionHeader}>
@@ -331,72 +362,135 @@ const HomeScreen = ({ navigation }) => {
             Latest Notices
           </Text>
 
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("Notices")
-            }
-          >
+          <TouchableOpacity onPress={openNotices}>
             <Text style={styles.viewAll}>
               View All
             </Text>
           </TouchableOpacity>
         </View>
 
-        {notices.map((notice) => (
-          <TouchableOpacity
-            key={notice.id}
-            style={styles.noticeCard}
-            onPress={() =>
-              navigation.navigate("Notices")
-            }
-          >
-            <View style={styles.noticeIcon}>
-              <Ionicons
-                name={notice.icon}
-                size={23}
-                color="#6C63FF"
-              />
-            </View>
-
-            <View style={styles.noticeContent}>
-              <Text style={styles.noticeTitle}>
-                {notice.title}
-              </Text>
-
-              <Text style={styles.noticeDate}>
-                {notice.date}
-              </Text>
-            </View>
-
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color="#999"
-            />
-          </TouchableOpacity>
-        ))}
-
-        {/* My Registrations */}
+        {/* Notice 1 */}
         <TouchableOpacity
-          style={styles.registrationCard}
-          onPress={() =>
-            navigation.navigate("MyRegistrations")
-          }
+          style={styles.noticeCard}
+          onPress={openNotices}
         >
-          <View style={styles.registrationIcon}>
+          <View style={styles.noticeIcon}>
             <Ionicons
-              name="clipboard-outline"
-              size={28}
+              name="school-outline"
+              size={24}
               color="#6C63FF"
             />
           </View>
 
-          <View style={styles.registrationContent}>
-            <Text style={styles.registrationTitle}>
+          <View style={styles.noticeContent}>
+            <Text style={styles.noticeTitle}>
+              React Native Workshop
+            </Text>
+
+            <Text style={styles.noticeDate}>
+              30 July 2026
+            </Text>
+
+            <Text style={styles.noticeDescription}>
+              Workshop information and registration details.
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color="#999"
+          />
+        </TouchableOpacity>
+
+        {/* Notice 2 */}
+        <TouchableOpacity
+          style={styles.noticeCard}
+          onPress={openNotices}
+        >
+          <View style={styles.noticeIcon}>
+            <Ionicons
+              name="trophy-outline"
+              size={24}
+              color="#6C63FF"
+            />
+          </View>
+
+          <View style={styles.noticeContent}>
+            <Text style={styles.noticeTitle}>
+              Hackathon
+            </Text>
+
+            <Text style={styles.noticeDate}>
+              10 August 2026
+            </Text>
+
+            <Text style={styles.noticeDescription}>
+              Participate in the upcoming college hackathon.
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color="#999"
+          />
+        </TouchableOpacity>
+
+        {/* Notice 3 */}
+        <TouchableOpacity
+          style={styles.noticeCard}
+          onPress={openNotices}
+        >
+          <View style={styles.noticeIcon}>
+            <Ionicons
+              name="briefcase-outline"
+              size={24}
+              color="#6C63FF"
+            />
+          </View>
+
+          <View style={styles.noticeContent}>
+            <Text style={styles.noticeTitle}>
+              Placement Drive
+            </Text>
+
+            <Text style={styles.noticeDate}>
+              15 August 2026
+            </Text>
+
+            <Text style={styles.noticeDescription}>
+              Placement drive details for eligible students.
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color="#999"
+          />
+        </TouchableOpacity>
+
+        {/* My Registrations */}
+        <TouchableOpacity
+          style={styles.actionCard}
+          onPress={openRegistrations}
+        >
+
+          <View style={styles.actionIcon}>
+            <Ionicons
+              name="checkmark-circle-outline"
+              size={27}
+              color="#6C63FF"
+            />
+          </View>
+
+          <View style={styles.actionContent}>
+            <Text style={styles.actionTitle}>
               My Registrations
             </Text>
 
-            <Text style={styles.registrationSub}>
+            <Text style={styles.actionSubtitle}>
               View your registered events
             </Text>
           </View>
@@ -406,29 +500,29 @@ const HomeScreen = ({ navigation }) => {
             size={22}
             color="#777"
           />
+
         </TouchableOpacity>
 
         {/* Saved Items */}
         <TouchableOpacity
-          style={styles.registrationCard}
-          onPress={() =>
-            navigation.navigate("Saved")
-          }
+          style={styles.actionCard}
+          onPress={openSaved}
         >
-          <View style={styles.registrationIcon}>
+
+          <View style={styles.actionIcon}>
             <Ionicons
               name="bookmark-outline"
-              size={28}
+              size={27}
               color="#6C63FF"
             />
           </View>
 
-          <View style={styles.registrationContent}>
-            <Text style={styles.registrationTitle}>
+          <View style={styles.actionContent}>
+            <Text style={styles.actionTitle}>
               Saved Items
             </Text>
 
-            <Text style={styles.registrationSub}>
+            <Text style={styles.actionSubtitle}>
               View your saved notices and events
             </Text>
           </View>
@@ -438,7 +532,11 @@ const HomeScreen = ({ navigation }) => {
             size={22}
             color="#777"
           />
+
         </TouchableOpacity>
+
+        {/* Bottom Space */}
+        <View style={{ height: 30 }} />
 
       </ScrollView>
     </View>
@@ -448,32 +546,31 @@ const HomeScreen = ({ navigation }) => {
 export default HomeScreen;
 
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
     backgroundColor: "#F7F7FB",
   },
 
   header: {
+    height: 75,
     backgroundColor: "#6C63FF",
-    paddingHorizontal: 20,
-    paddingTop: 45,
-    paddingBottom: 20,
+    paddingHorizontal: 18,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
   },
 
-  smallHeaderText: {
-    color: "#DCD9FF",
-    fontSize: 11,
-    fontWeight: "600",
+  appName: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
     letterSpacing: 1,
   },
 
-  headerTitle: {
-    color: "white",
-    fontSize: 20,
-    fontWeight: "bold",
+  headerSubtitle: {
+    color: "#E8E7FF",
+    fontSize: 12,
     marginTop: 3,
   },
 
@@ -481,19 +578,19 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
     borderRadius: 23,
-    backgroundColor: "#5B53D6",
+    backgroundColor: "rgba(255,255,255,0.15)",
     justifyContent: "center",
     alignItems: "center",
   },
 
   notificationBadge: {
     position: "absolute",
-    right: -2,
-    top: -2,
-    width: 19,
-    height: 19,
-    borderRadius: 10,
-    backgroundColor: "#FF4D6D",
+    right: 1,
+    top: 1,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#FF5252",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -506,59 +603,72 @@ const styles = StyleSheet.create({
 
   scrollContent: {
     padding: 15,
-    paddingBottom: 30,
   },
 
   welcomeCard: {
     backgroundColor: "white",
-    borderRadius: 18,
-    padding: 18,
+    borderRadius: 17,
+    padding: 17,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     elevation: 3,
     marginBottom: 20,
   },
 
-  welcomeText: {
-    flex: 1,
-  },
-
-  welcomeSmall: {
-    color: "#777",
-    fontSize: 13,
-  },
-
-  welcomeTitle: {
-    color: "#222",
-    fontSize: 25,
-    fontWeight: "bold",
-    marginTop: 3,
-  },
-
-  welcomeDescription: {
-    color: "#777",
-    fontSize: 13,
-    marginTop: 5,
-  },
-
   welcomeIcon: {
-    width: 65,
-    height: 65,
-    borderRadius: 33,
+    width: 58,
+    height: 58,
+    borderRadius: 16,
     backgroundColor: "#EEEEFF",
     justifyContent: "center",
     alignItems: "center",
   },
 
+  welcomeContent: {
+    flex: 1,
+    marginLeft: 13,
+  },
+
+  welcomeSmall: {
+    fontSize: 12,
+    color: "#777",
+  },
+
+  welcomeName: {
+    fontSize: 21,
+    fontWeight: "bold",
+    color: "#222",
+    marginTop: 2,
+  },
+
+  welcomeMessage: {
+    fontSize: 12,
+    color: "#777",
+    marginTop: 3,
+  },
+
   sectionTitle: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: "bold",
     color: "#222",
     marginBottom: 12,
   },
 
-  quickGrid: {
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 5,
+  },
+
+  viewAll: {
+    color: "#6C63FF",
+    fontSize: 13,
+    fontWeight: "bold",
+    marginBottom: 12,
+  },
+
+  quickActions: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
@@ -571,49 +681,31 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 15,
     marginBottom: 12,
+    alignItems: "center",
     elevation: 2,
   },
 
   quickIcon: {
-    width: 45,
-    height: 45,
-    borderRadius: 12,
+    width: 50,
+    height: 50,
+    borderRadius: 14,
     backgroundColor: "#EEEEFF",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
 
-  quickTitle: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "#222",
-  },
-
-  quickSub: {
-    color: "#888",
-    fontSize: 12,
-    marginTop: 4,
-  },
-
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  viewAll: {
-    color: "#6C63FF",
-    fontWeight: "600",
+  quickText: {
     fontSize: 13,
-    marginBottom: 12,
+    color: "#333",
+    fontWeight: "600",
   },
 
   eventCard: {
     backgroundColor: "white",
-    borderRadius: 18,
-    padding: 17,
-    marginBottom: 22,
+    borderRadius: 17,
+    padding: 16,
+    marginBottom: 15,
     elevation: 3,
   },
 
@@ -643,81 +735,118 @@ const styles = StyleSheet.create({
   },
 
   eventTitle: {
+    color: "#222",
     fontSize: 17,
     fontWeight: "bold",
-    color: "#222",
     marginTop: 3,
   },
 
   daysBox: {
     backgroundColor: "#EEEEFF",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderRadius: 11,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
     alignItems: "center",
   },
 
   daysNumber: {
     color: "#6C63FF",
-    fontSize: 21,
+    fontSize: 20,
     fontWeight: "bold",
   },
 
-  daysText: {
+  daysLabel: {
     color: "#6C63FF",
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: "bold",
   },
 
-  divider: {
+  eventDivider: {
     height: 1,
-    backgroundColor: "#eee",
-    marginVertical: 14,
+    backgroundColor: "#EEEEEE",
+    marginVertical: 13,
   },
 
-  eventDetailRow: {
+  eventDetail: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 8,
   },
 
-  eventDetail: {
+  detailText: {
+    marginLeft: 8,
     color: "#666",
     fontSize: 13,
-    marginLeft: 8,
   },
 
   eventButton: {
-    backgroundColor: "#6C63FF",
-    borderRadius: 11,
-    paddingVertical: 12,
-    marginTop: 8,
+    marginTop: 7,
+    height: 42,
+    borderWidth: 1,
+    borderColor: "#6C63FF",
+    borderRadius: 10,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
   },
 
   eventButtonText: {
-    color: "white",
-    fontSize: 14,
+    color: "#6C63FF",
+    fontSize: 13,
     fontWeight: "bold",
     marginRight: 7,
   },
 
+  reminderCard: {
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    elevation: 2,
+  },
+
+  reminderIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 13,
+    backgroundColor: "#EEEEFF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  reminderContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+
+  reminderTitle: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#222",
+  },
+
+  reminderSubtitle: {
+    fontSize: 12,
+    color: "#888",
+    marginTop: 4,
+  },
+
   noticeCard: {
     backgroundColor: "white",
-    borderRadius: 14,
-    padding: 13,
-    marginBottom: 10,
+    borderRadius: 15,
+    padding: 14,
+    marginBottom: 12,
     flexDirection: "row",
     alignItems: "center",
     elevation: 2,
   },
 
   noticeIcon: {
-    width: 45,
-    height: 45,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 13,
     backgroundColor: "#EEEEFF",
     justifyContent: "center",
     alignItems: "center",
@@ -726,6 +855,7 @@ const styles = StyleSheet.create({
   noticeContent: {
     flex: 1,
     marginLeft: 12,
+    marginRight: 8,
   },
 
   noticeTitle: {
@@ -735,22 +865,29 @@ const styles = StyleSheet.create({
   },
 
   noticeDate: {
-    fontSize: 12,
+    fontSize: 11,
+    color: "#6C63FF",
+    marginTop: 3,
+    fontWeight: "600",
+  },
+
+  noticeDescription: {
+    fontSize: 11,
     color: "#888",
     marginTop: 4,
   },
 
-  registrationCard: {
+  actionCard: {
     backgroundColor: "white",
     borderRadius: 15,
     padding: 15,
-    marginTop: 10,
+    marginBottom: 12,
     flexDirection: "row",
     alignItems: "center",
     elevation: 2,
   },
 
-  registrationIcon: {
+  actionIcon: {
     width: 50,
     height: 50,
     borderRadius: 13,
@@ -759,20 +896,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  registrationContent: {
+  actionContent: {
     flex: 1,
     marginLeft: 12,
   },
 
-  registrationTitle: {
+  actionTitle: {
     fontSize: 15,
     fontWeight: "bold",
     color: "#222",
   },
 
-  registrationSub: {
+  actionSubtitle: {
     fontSize: 12,
     color: "#888",
     marginTop: 4,
   },
+
 });

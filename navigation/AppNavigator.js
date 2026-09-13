@@ -9,6 +9,7 @@ import MyRegistrationsScreen from "../screens/MyRegistrationsScreen";
 import SavedScreen from "../screens/SavedScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import EventReminderScreen from "../screens/EventReminderScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -61,6 +62,12 @@ const AppNavigator = () => {
       <Stack.Screen
         name="Profile"
         component={ProfileScreen}
+      />
+
+      {/* EVENT REMINDER */}
+      <Stack.Screen
+        name="EventReminder"
+        component={EventReminderScreen}
       />
 
     </Stack.Navigator>
