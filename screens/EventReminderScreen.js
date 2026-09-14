@@ -48,9 +48,7 @@ const EventReminderScreen = ({ navigation }) => {
 
   const loadReminders = async () => {
     try {
-      const saved = await AsyncStorage.getItem(
-        REMINDER_KEY
-      );
+      const saved = await AsyncStorage.getItem(REMINDER_KEY);
 
       if (saved) {
         setReminders(JSON.parse(saved));
@@ -121,6 +119,12 @@ const EventReminderScreen = ({ navigation }) => {
     );
   };
 
+  const getActiveReminderCount = () => {
+    return Object.values(reminders).filter(
+      (value) => value === true
+    ).length;
+  };
+
   const getCategoryIcon = (category) => {
     if (category === "Technical") {
       return "code-slash-outline";
@@ -135,12 +139,13 @@ const EventReminderScreen = ({ navigation }) => {
 
   const renderEvent = ({ item }) => {
     const daysLeft = calculateDaysLeft(item.id);
-    const reminderActive = reminders[item.id];
+
+    const reminderActive = reminders[item.id] === true;
 
     return (
       <View style={styles.eventCard}>
 
-        {/* Top */}
+        {/* Event Header */}
         <View style={styles.eventTop}>
 
           <View style={styles.iconBox}>
@@ -152,6 +157,7 @@ const EventReminderScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.eventInfo}>
+
             <Text style={styles.category}>
               {item.category}
             </Text>
@@ -159,9 +165,11 @@ const EventReminderScreen = ({ navigation }) => {
             <Text style={styles.eventTitle}>
               {item.title}
             </Text>
+
           </View>
 
           <View style={styles.daysBox}>
+
             <Text style={styles.daysNumber}>
               {daysLeft}
             </Text>
@@ -169,14 +177,16 @@ const EventReminderScreen = ({ navigation }) => {
             <Text style={styles.daysLabel}>
               DAYS
             </Text>
+
           </View>
 
         </View>
 
-        {/* Details */}
         <View style={styles.divider} />
 
+        {/* Date */}
         <View style={styles.detailRow}>
+
           <Ionicons
             name="calendar-outline"
             size={18}
@@ -186,9 +196,12 @@ const EventReminderScreen = ({ navigation }) => {
           <Text style={styles.detailText}>
             {item.date}
           </Text>
+
         </View>
 
+        {/* Time */}
         <View style={styles.detailRow}>
+
           <Ionicons
             name="time-outline"
             size={18}
@@ -198,9 +211,12 @@ const EventReminderScreen = ({ navigation }) => {
           <Text style={styles.detailText}>
             {item.time}
           </Text>
+
         </View>
 
+        {/* Venue */}
         <View style={styles.detailRow}>
+
           <Ionicons
             name="location-outline"
             size={18}
@@ -210,17 +226,18 @@ const EventReminderScreen = ({ navigation }) => {
           <Text style={styles.detailText}>
             {item.venue}
           </Text>
+
         </View>
 
-        {/* Reminder */}
+        {/* Reminder Button */}
         <TouchableOpacity
           style={[
             styles.reminderButton,
-            reminderActive &&
-              styles.reminderActive,
+            reminderActive && styles.reminderActive,
           ]}
           onPress={() => toggleReminder(item)}
         >
+
           <Ionicons
             name={
               reminderActive
@@ -246,6 +263,7 @@ const EventReminderScreen = ({ navigation }) => {
               ? "Reminder Set"
               : "Set Reminder"}
           </Text>
+
         </TouchableOpacity>
 
       </View>
@@ -276,37 +294,69 @@ const EventReminderScreen = ({ navigation }) => {
 
       </View>
 
-      {/* Introduction */}
-      <View style={styles.introCard}>
-
-        <View style={styles.introIcon}>
-          <Ionicons
-            name="alarm-outline"
-            size={28}
-            color="#6C63FF"
-          />
-        </View>
-
-        <View style={styles.introContent}>
-          <Text style={styles.introTitle}>
-            Never Miss an Event
-          </Text>
-
-          <Text style={styles.introText}>
-            Set reminders for upcoming campus
-            events and stay updated.
-          </Text>
-        </View>
-
-      </View>
-
-      {/* Event List */}
       <FlatList
         data={events}
         keyExtractor={(item) => item.id}
         renderItem={renderEvent}
-        contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.list}
+
+        ListHeaderComponent={
+          <>
+            {/* Summary Card */}
+            <View style={styles.summaryCard}>
+
+              <View style={styles.summaryIcon}>
+                <Ionicons
+                  name="notifications"
+                  size={28}
+                  color="#6C63FF"
+                />
+              </View>
+
+              <View style={styles.summaryContent}>
+
+                <Text style={styles.summaryTitle}>
+                  Your Reminders
+                </Text>
+
+                <Text style={styles.summaryText}>
+                  {getActiveReminderCount()} reminder
+                  {getActiveReminderCount() !== 1
+                    ? "s"
+                    : ""}{" "}
+                  currently active
+                </Text>
+
+              </View>
+
+              <View style={styles.countCircle}>
+
+                <Text style={styles.countText}>
+                  {getActiveReminderCount()}
+                </Text>
+
+              </View>
+
+            </View>
+
+            {/* Information Card */}
+            <View style={styles.infoCard}>
+
+              <Ionicons
+                name="information-circle-outline"
+                size={23}
+                color="#6C63FF"
+              />
+
+              <Text style={styles.infoText}>
+                Tap "Set Reminder" to save a reminder
+                for an upcoming campus event.
+              </Text>
+
+            </View>
+          </>
+        }
       />
 
     </View>
@@ -316,6 +366,7 @@ const EventReminderScreen = ({ navigation }) => {
 export default EventReminderScreen;
 
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
     backgroundColor: "#F7F7FB",
@@ -336,46 +387,77 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
-  introCard: {
-    backgroundColor: "white",
-    margin: 15,
+  list: {
     padding: 15,
-    borderRadius: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    elevation: 2,
+    paddingBottom: 30,
   },
 
-  introIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
+  summaryCard: {
+    backgroundColor: "white",
+    borderRadius: 17,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    elevation: 3,
+    marginBottom: 12,
+  },
+
+  summaryIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 15,
     backgroundColor: "#EEEEFF",
     justifyContent: "center",
     alignItems: "center",
   },
 
-  introContent: {
+  summaryContent: {
     flex: 1,
     marginLeft: 12,
   },
 
-  introTitle: {
-    fontSize: 16,
+  summaryTitle: {
+    fontSize: 17,
     fontWeight: "bold",
     color: "#222",
   },
 
-  introText: {
+  summaryText: {
     fontSize: 12,
     color: "#777",
     marginTop: 4,
-    lineHeight: 17,
   },
 
-  list: {
-    paddingHorizontal: 15,
-    paddingBottom: 25,
+  countCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#EEEEFF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  countText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#6C63FF",
+  },
+
+  infoCard: {
+    backgroundColor: "#F0F0FF",
+    borderRadius: 13,
+    padding: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+
+  infoText: {
+    flex: 1,
+    fontSize: 12,
+    color: "#555",
+    marginLeft: 9,
+    lineHeight: 17,
   },
 
   eventCard: {
@@ -481,4 +563,5 @@ const styles = StyleSheet.create({
   reminderActiveText: {
     color: "white",
   },
+
 });
