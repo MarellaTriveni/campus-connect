@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   FlatList,
   Alert,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -14,6 +15,8 @@ const REMINDER_KEY = "event_reminders";
 
 const EventReminderScreen = ({ navigation }) => {
   const [reminders, setReminders] = useState({});
+  const [searchText, setSearchText] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
   const events = [
     {
@@ -23,6 +26,7 @@ const EventReminderScreen = ({ navigation }) => {
       date: "15 September 2026",
       time: "11:00 AM",
       venue: "Computer Lab",
+      eventDate: new Date(2026, 8, 15),
     },
     {
       id: "2",
@@ -31,6 +35,7 @@ const EventReminderScreen = ({ navigation }) => {
       date: "20 September 2026",
       time: "5:00 PM",
       venue: "College Auditorium",
+      eventDate: new Date(2026, 8, 20),
     },
     {
       id: "3",
@@ -39,13 +44,22 @@ const EventReminderScreen = ({ navigation }) => {
       date: "25 September 2026",
       time: "9:00 AM",
       venue: "College Ground",
+      eventDate: new Date(2026, 8, 25),
     },
+  ];
+
+  const categories = [
+    "All",
+    "Technical",
+    "Cultural",
+    "Sports",
   ];
 
   useEffect(() => {
     loadReminders();
   }, []);
 
+  // Load saved reminders
   const loadReminders = async () => {
     try {
       const saved = await AsyncStorage.getItem(REMINDER_KEY);
@@ -58,6 +72,7 @@ const EventReminderScreen = ({ navigation }) => {
     }
   };
 
+  // Add or remove reminder
   const toggleReminder = async (event) => {
     try {
       const updatedReminders = {
@@ -93,23 +108,16 @@ const EventReminderScreen = ({ navigation }) => {
     }
   };
 
-  const calculateDaysLeft = (eventId) => {
-    let eventDate;
-
-    if (eventId === "1") {
-      eventDate = new Date(2026, 8, 15);
-    } else if (eventId === "2") {
-      eventDate = new Date(2026, 8, 20);
-    } else {
-      eventDate = new Date(2026, 8, 25);
-    }
-
+  // Calculate days remaining
+  const calculateDaysLeft = (eventDate) => {
     const today = new Date();
 
     today.setHours(0, 0, 0, 0);
-    eventDate.setHours(0, 0, 0, 0);
 
-    const difference = eventDate - today;
+    const date = new Date(eventDate);
+    date.setHours(0, 0, 0, 0);
+
+    const difference = date - today;
 
     return Math.max(
       Math.ceil(
@@ -119,12 +127,14 @@ const EventReminderScreen = ({ navigation }) => {
     );
   };
 
+  // Active reminder count
   const getActiveReminderCount = () => {
     return Object.values(reminders).filter(
       (value) => value === true
     ).length;
   };
 
+  // Category icon
   const getCategoryIcon = (category) => {
     if (category === "Technical") {
       return "code-slash-outline";
@@ -137,15 +147,39 @@ const EventReminderScreen = ({ navigation }) => {
     return "football-outline";
   };
 
-  const renderEvent = ({ item }) => {
-    const daysLeft = calculateDaysLeft(item.id);
+  // Filter events
+  const filteredEvents = events.filter((event) => {
+    const matchesSearch =
+      event.title
+        .toLowerCase()
+        .includes(searchText.toLowerCase()) ||
+      event.category
+        .toLowerCase()
+        .includes(searchText.toLowerCase()) ||
+      event.venue
+        .toLowerCase()
+        .includes(searchText.toLowerCase());
 
-    const reminderActive = reminders[item.id] === true;
+    const matchesCategory =
+      selectedCategory === "All" ||
+      event.category === selectedCategory;
+
+    return matchesSearch && matchesCategory;
+  });
+
+  // Event card
+  const renderEvent = ({ item }) => {
+    const daysLeft = calculateDaysLeft(
+      item.eventDate
+    );
+
+    const reminderActive =
+      reminders[item.id] === true;
 
     return (
       <View style={styles.eventCard}>
 
-        {/* Event Header */}
+        {/* Event Top */}
         <View style={styles.eventTop}>
 
           <View style={styles.iconBox}>
@@ -229,13 +263,16 @@ const EventReminderScreen = ({ navigation }) => {
 
         </View>
 
-        {/* Reminder Button */}
+        {/* Reminder */}
         <TouchableOpacity
           style={[
             styles.reminderButton,
-            reminderActive && styles.reminderActive,
+            reminderActive &&
+              styles.reminderActive,
           ]}
-          onPress={() => toggleReminder(item)}
+          onPress={() =>
+            toggleReminder(item)
+          }
         >
 
           <Ionicons
@@ -295,7 +332,7 @@ const EventReminderScreen = ({ navigation }) => {
       </View>
 
       <FlatList
-        data={events}
+        data={filteredEvents}
         keyExtractor={(item) => item.id}
         renderItem={renderEvent}
         showsVerticalScrollIndicator={false}
@@ -303,7 +340,8 @@ const EventReminderScreen = ({ navigation }) => {
 
         ListHeaderComponent={
           <>
-            {/* Summary Card */}
+
+            {/* Summary */}
             <View style={styles.summaryCard}>
 
               <View style={styles.summaryIcon}>
@@ -321,11 +359,10 @@ const EventReminderScreen = ({ navigation }) => {
                 </Text>
 
                 <Text style={styles.summaryText}>
-                  {getActiveReminderCount()} reminder
+                  {getActiveReminderCount()} active reminder
                   {getActiveReminderCount() !== 1
                     ? "s"
-                    : ""}{" "}
-                  currently active
+                    : ""}
                 </Text>
 
               </View>
@@ -340,22 +377,108 @@ const EventReminderScreen = ({ navigation }) => {
 
             </View>
 
-            {/* Information Card */}
-            <View style={styles.infoCard}>
+            {/* Search */}
+            <View style={styles.searchContainer}>
 
               <Ionicons
-                name="information-circle-outline"
-                size={23}
-                color="#6C63FF"
+                name="search-outline"
+                size={20}
+                color="#777"
               />
 
-              <Text style={styles.infoText}>
-                Tap "Set Reminder" to save a reminder
-                for an upcoming campus event.
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search events..."
+                placeholderTextColor="#999"
+                value={searchText}
+                onChangeText={setSearchText}
+              />
+
+              {searchText.length > 0 && (
+                <TouchableOpacity
+                  onPress={() =>
+                    setSearchText("")
+                  }
+                >
+                  <Ionicons
+                    name="close-circle"
+                    size={20}
+                    color="#999"
+                  />
+                </TouchableOpacity>
+              )}
+
+            </View>
+
+            {/* Category Filter */}
+            <Text style={styles.filterTitle}>
+              Categories
+            </Text>
+
+            <View style={styles.categoryContainer}>
+
+              {categories.map((category) => (
+                <TouchableOpacity
+                  key={category}
+                  style={[
+                    styles.categoryButton,
+                    selectedCategory === category &&
+                      styles.categorySelected,
+                  ]}
+                  onPress={() =>
+                    setSelectedCategory(category)
+                  }
+                >
+
+                  <Text
+                    style={[
+                      styles.categoryButtonText,
+                      selectedCategory === category &&
+                        styles.categorySelectedText,
+                    ]}
+                  >
+                    {category}
+                  </Text>
+
+                </TouchableOpacity>
+              ))}
+
+            </View>
+
+            {/* Results */}
+            <View style={styles.resultsRow}>
+
+              <Text style={styles.resultsText}>
+                {filteredEvents.length} event
+                {filteredEvents.length !== 1
+                  ? "s"
+                  : ""}{" "}
+                found
               </Text>
 
             </View>
+
           </>
+        }
+
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+
+            <Ionicons
+              name="calendar-outline"
+              size={55}
+              color="#BBBBBB"
+            />
+
+            <Text style={styles.emptyTitle}>
+              No Events Found
+            </Text>
+
+            <Text style={styles.emptyText}>
+              Try another search or category.
+            </Text>
+
+          </View>
         }
       />
 
@@ -443,21 +566,66 @@ const styles = StyleSheet.create({
     color: "#6C63FF",
   },
 
-  infoCard: {
-    backgroundColor: "#F0F0FF",
-    borderRadius: 13,
-    padding: 13,
+  searchContainer: {
+    height: 48,
+    backgroundColor: "white",
+    borderRadius: 12,
+    paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
+    elevation: 2,
     marginBottom: 15,
   },
 
-  infoText: {
+  searchInput: {
     flex: 1,
+    fontSize: 14,
+    color: "#333",
+    marginLeft: 9,
+  },
+
+  filterTitle: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 9,
+  },
+
+  categoryContainer: {
+    flexDirection: "row",
+    marginBottom: 15,
+  },
+
+  categoryButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    backgroundColor: "white",
+    borderRadius: 20,
+    marginRight: 8,
+    elevation: 1,
+  },
+
+  categorySelected: {
+    backgroundColor: "#6C63FF",
+  },
+
+  categoryButtonText: {
     fontSize: 12,
     color: "#555",
-    marginLeft: 9,
-    lineHeight: 17,
+    fontWeight: "600",
+  },
+
+  categorySelectedText: {
+    color: "white",
+  },
+
+  resultsRow: {
+    marginBottom: 10,
+  },
+
+  resultsText: {
+    fontSize: 12,
+    color: "#777",
   },
 
   eventCard: {
@@ -562,6 +730,25 @@ const styles = StyleSheet.create({
 
   reminderActiveText: {
     color: "white",
+  },
+
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+  },
+
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: "bold",
+    color: "#444",
+    marginTop: 12,
+  },
+
+  emptyText: {
+    fontSize: 13,
+    color: "#888",
+    marginTop: 5,
   },
 
 });
