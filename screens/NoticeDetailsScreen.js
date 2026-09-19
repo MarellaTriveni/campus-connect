@@ -5,104 +5,102 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Share,
   ScrollView,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
 
 const SAVED_NOTICES_KEY = "saved_notices";
 
-const NoticeDetailsScreen = ({ route, navigation }) => {
+export default function NoticeDetailsScreen({ route, navigation }) {
   const { notice } = route.params;
 
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
-    loadSavedStatus();
+    checkSavedStatus();
   }, []);
 
-  const loadSavedStatus = async () => {
+  const checkSavedStatus = async () => {
     try {
-      const saved = await AsyncStorage.getItem(
-        SAVED_NOTICES_KEY
-      );
+      const saved = await AsyncStorage.getItem(SAVED_NOTICES_KEY);
 
       if (saved) {
-        const savedData = JSON.parse(saved);
+        const savedNotices = JSON.parse(saved);
 
-        setIsSaved(savedData[notice.id] === true);
+        const exists = savedNotices.some(
+          (item) => item.id === notice.id
+        );
+
+        setIsSaved(exists);
       }
     } catch (error) {
-      console.log("Load saved status error:", error);
+      console.log("Error checking saved status:", error);
     }
   };
 
   const toggleSave = async () => {
     try {
-      const saved = await AsyncStorage.getItem(
-        SAVED_NOTICES_KEY
+      const saved = await AsyncStorage.getItem(SAVED_NOTICES_KEY);
+
+      let savedNotices = saved ? JSON.parse(saved) : [];
+
+      const alreadySaved = savedNotices.some(
+        (item) => item.id === notice.id
       );
 
-      const savedData = saved
-        ? JSON.parse(saved)
-        : {};
+      if (alreadySaved) {
+        savedNotices = savedNotices.filter(
+          (item) => item.id !== notice.id
+        );
 
-      const updatedData = {
-        ...savedData,
-        [notice.id]: !savedData[notice.id],
-      };
+        setIsSaved(false);
+
+        Alert.alert(
+          "Removed",
+          "Notice removed from saved items."
+        );
+      } else {
+        savedNotices.push(notice);
+
+        setIsSaved(true);
+
+        Alert.alert(
+          "Saved",
+          "Notice saved successfully."
+        );
+      }
 
       await AsyncStorage.setItem(
         SAVED_NOTICES_KEY,
-        JSON.stringify(updatedData)
-      );
-
-      setIsSaved(!isSaved);
-
-      Alert.alert(
-        !isSaved
-          ? "Notice Saved"
-          : "Notice Removed",
-        !isSaved
-          ? "This notice has been added to your saved items."
-          : "This notice has been removed from your saved items."
+        JSON.stringify(savedNotices)
       );
     } catch (error) {
-      console.log("Save error:", error);
+      console.log("Error saving notice:", error);
+    }
+  };
 
+  // Day 40: Actual Share Feature
+  const shareNotice = async () => {
+    try {
+      const message =
+        `College Notice\n\n` +
+        `${notice.title}\n\n` +
+        `Category: ${notice.category}\n` +
+        `Date: ${notice.date}\n\n` +
+        `${notice.description}`;
+
+      await Share.share({
+        message: message,
+        title: notice.title,
+      });
+    } catch (error) {
       Alert.alert(
         "Error",
-        "Unable to update saved notice."
+        "Unable to share this notice."
       );
     }
-  };
-
-  const shareNotice = () => {
-    Alert.alert(
-      "Share Notice",
-      "Sharing feature can be connected to a sharing service later.",
-      [
-        {
-          text: "OK",
-        },
-      ]
-    );
-  };
-
-  const getCategoryIcon = () => {
-    if (notice.category === "Technical") {
-      return "code-slash-outline";
-    }
-
-    if (notice.category === "Placement") {
-      return "briefcase-outline";
-    }
-
-    if (notice.category === "Academic") {
-      return "school-outline";
-    }
-
-    return "information-circle-outline";
   };
 
   return (
@@ -110,15 +108,14 @@ const NoticeDetailsScreen = ({ route, navigation }) => {
 
       {/* Header */}
       <View style={styles.header}>
-
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={styles.headerButton}
+          style={styles.backButton}
         >
           <Ionicons
             name="arrow-back"
-            size={25}
-            color="white"
+            size={26}
+            color="#fff"
           />
         </TouchableOpacity>
 
@@ -127,20 +124,15 @@ const NoticeDetailsScreen = ({ route, navigation }) => {
         </Text>
 
         <TouchableOpacity
-          onPress={toggleSave}
-          style={styles.headerButton}
+          onPress={shareNotice}
+          style={styles.shareIcon}
         >
           <Ionicons
-            name={
-              isSaved
-                ? "bookmark"
-                : "bookmark-outline"
-            }
+            name="share-social-outline"
             size={25}
-            color="white"
+            color="#fff"
           />
         </TouchableOpacity>
-
       </View>
 
       <ScrollView
@@ -149,23 +141,12 @@ const NoticeDetailsScreen = ({ route, navigation }) => {
       >
 
         {/* Notice Icon */}
-        <View style={styles.largeIcon}>
-
+        <View style={styles.iconContainer}>
           <Ionicons
-            name={getCategoryIcon()}
-            size={48}
-            color="#6C63FF"
+            name="notifications-outline"
+            size={45}
+            color="#2563EB"
           />
-
-        </View>
-
-        {/* Category */}
-        <View style={styles.categoryBadge}>
-
-          <Text style={styles.categoryText}>
-            {notice.category}
-          </Text>
-
         </View>
 
         {/* Title */}
@@ -173,94 +154,72 @@ const NoticeDetailsScreen = ({ route, navigation }) => {
           {notice.title}
         </Text>
 
-        {/* Date */}
-        <View style={styles.dateContainer}>
-
-          <Ionicons
-            name="calendar-outline"
-            size={19}
-            color="#777"
-          />
-
-          <Text style={styles.dateText}>
-            {notice.date}
+        {/* Category */}
+        <View style={styles.categoryBox}>
+          <Text style={styles.categoryText}>
+            {notice.category}
           </Text>
-
         </View>
 
-        {/* Divider */}
-        <View style={styles.divider} />
+        {/* Date */}
+        <View style={styles.infoRow}>
+          <Ionicons
+            name="calendar-outline"
+            size={21}
+            color="#2563EB"
+          />
 
-        {/* Description Heading */}
-        <Text style={styles.descriptionHeading}>
-          Notice Information
-        </Text>
+          <Text style={styles.infoText}>
+            {notice.date}
+          </Text>
+        </View>
 
         {/* Description */}
-        <Text style={styles.description}>
-          {notice.description}
-        </Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            Description
+          </Text>
+
+          <Text style={styles.description}>
+            {notice.description}
+          </Text>
+        </View>
 
         {/* Important Information */}
-        <View style={styles.infoCard}>
-
+        <View style={styles.importantCard}>
           <Ionicons
             name="information-circle-outline"
             size={25}
-            color="#6C63FF"
+            color="#2563EB"
           />
 
-          <View style={styles.infoContent}>
-
-            <Text style={styles.infoTitle}>
-              Important
+          <View style={styles.importantContent}>
+            <Text style={styles.importantTitle}>
+              Important Information
             </Text>
 
-            <Text style={styles.infoText}>
-              Students are advised to check this notice
-              carefully and follow the instructions
-              provided by the college.
+            <Text style={styles.importantText}>
+              Please check the college notice board
+              or contact the concerned department
+              for additional information.
             </Text>
-
           </View>
-
         </View>
 
         {/* Save Button */}
         <TouchableOpacity
-          style={[
-            styles.saveButton,
-            isSaved && styles.savedButton,
-          ]}
+          style={styles.saveButton}
           onPress={toggleSave}
         >
-
           <Ionicons
-            name={
-              isSaved
-                ? "bookmark"
-                : "bookmark-outline"
-            }
-            size={20}
-            color={
-              isSaved
-                ? "white"
-                : "#6C63FF"
-            }
+            name={isSaved ? "bookmark" : "bookmark-outline"}
+            size={22}
+            color="#fff"
           />
 
-          <Text
-            style={[
-              styles.saveButtonText,
-              isSaved &&
-                styles.savedButtonText,
-            ]}
-          >
-            {isSaved
-              ? "Notice Saved"
-              : "Save Notice"}
+          <Text style={styles.buttonText}>
+            {isSaved ? "Remove from Saved" : "Save Notice"}
           </Text>
-
         </TouchableOpacity>
 
         {/* Share Button */}
@@ -268,117 +227,115 @@ const NoticeDetailsScreen = ({ route, navigation }) => {
           style={styles.shareButton}
           onPress={shareNotice}
         >
-
           <Ionicons
             name="share-social-outline"
-            size={20}
-            color="#6C63FF"
+            size={22}
+            color="#2563EB"
           />
 
           <Text style={styles.shareButtonText}>
             Share Notice
           </Text>
-
         </TouchableOpacity>
 
       </ScrollView>
-
     </View>
   );
-};
-
-export default NoticeDetailsScreen;
+}
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
-    backgroundColor: "#F7F7FB",
+    backgroundColor: "#F5F7FB",
   },
 
   header: {
-    height: 65,
-    backgroundColor: "#6C63FF",
+    backgroundColor: "#2563EB",
+    paddingTop: 55,
+    paddingBottom: 18,
+    paddingHorizontal: 18,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 15,
   },
 
-  headerButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
+  backButton: {
+    width: 40,
   },
 
   headerTitle: {
-    color: "white",
+    color: "#fff",
     fontSize: 20,
     fontWeight: "bold",
   },
 
-  content: {
-    padding: 18,
-    paddingBottom: 35,
+  shareIcon: {
+    width: 40,
+    alignItems: "flex-end",
   },
 
-  largeIcon: {
-    width: 90,
-    height: 90,
-    borderRadius: 25,
-    backgroundColor: "#EEEEFF",
+  content: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+
+  iconContainer: {
+    width: 85,
+    height: 85,
+    borderRadius: 20,
+    backgroundColor: "#E8F0FF",
     justifyContent: "center",
     alignItems: "center",
     alignSelf: "center",
-    marginTop: 10,
-  },
-
-  categoryBadge: {
-    alignSelf: "center",
-    backgroundColor: "#EEEEFF",
-    paddingHorizontal: 15,
-    paddingVertical: 7,
-    borderRadius: 20,
-    marginTop: 15,
-  },
-
-  categoryText: {
-    color: "#6C63FF",
-    fontSize: 12,
-    fontWeight: "bold",
+    marginBottom: 18,
   },
 
   title: {
-    fontSize: 24,
+    fontSize: 25,
     fontWeight: "bold",
     color: "#222",
     textAlign: "center",
-    marginTop: 15,
-    lineHeight: 31,
+    marginBottom: 12,
   },
 
-  dateContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 12,
+  categoryBox: {
+    alignSelf: "center",
+    backgroundColor: "#E8F0FF",
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 10,
+    marginBottom: 18,
   },
 
-  dateText: {
+  categoryText: {
+    color: "#2563EB",
+    fontWeight: "bold",
     fontSize: 13,
-    color: "#777",
-    marginLeft: 7,
   },
 
-  divider: {
-    height: 1,
-    backgroundColor: "#DDDDDD",
-    marginVertical: 22,
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 18,
   },
 
-  descriptionHeading: {
+  infoText: {
+    marginLeft: 10,
+    color: "#555",
+    fontSize: 15,
+  },
+
+  section: {
+    backgroundColor: "#fff",
+    padding: 18,
+    borderRadius: 14,
+    marginBottom: 18,
+  },
+
+  sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#222",
@@ -387,79 +344,68 @@ const styles = StyleSheet.create({
 
   description: {
     fontSize: 15,
-    color: "#555",
-    lineHeight: 24,
+    color: "#666",
+    lineHeight: 23,
   },
 
-  infoCard: {
-    backgroundColor: "#EEEEFF",
+  importantCard: {
+    backgroundColor: "#E8F0FF",
+    padding: 16,
     borderRadius: 14,
-    padding: 15,
     flexDirection: "row",
-    marginTop: 22,
+    marginBottom: 20,
   },
 
-  infoContent: {
+  importantContent: {
     flex: 1,
     marginLeft: 10,
   },
 
-  infoTitle: {
-    fontSize: 15,
+  importantTitle: {
+    fontSize: 16,
     fontWeight: "bold",
-    color: "#333",
+    color: "#2563EB",
+    marginBottom: 5,
   },
 
-  infoText: {
-    fontSize: 12,
-    color: "#666",
-    lineHeight: 18,
-    marginTop: 4,
+  importantText: {
+    color: "#555",
+    fontSize: 14,
+    lineHeight: 20,
   },
 
   saveButton: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: "#6C63FF",
+    backgroundColor: "#2563EB",
+    height: 52,
     borderRadius: 12,
-    marginTop: 25,
-    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    flexDirection: "row",
+    marginBottom: 12,
   },
 
-  savedButton: {
-    backgroundColor: "#6C63FF",
-  },
-
-  saveButtonText: {
-    color: "#6C63FF",
-    fontSize: 14,
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
     fontWeight: "bold",
     marginLeft: 8,
-  },
-
-  savedButtonText: {
-    color: "white",
   },
 
   shareButton: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: "#DDDDDD",
+    height: 52,
     borderRadius: 12,
-    marginTop: 10,
-    flexDirection: "row",
+    borderWidth: 1,
+    borderColor: "#2563EB",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "white",
+    flexDirection: "row",
+    backgroundColor: "#fff",
   },
 
   shareButtonText: {
-    color: "#6C63FF",
-    fontSize: 14,
+    color: "#2563EB",
+    fontSize: 16,
     fontWeight: "bold",
     marginLeft: 8,
   },
-
 });
