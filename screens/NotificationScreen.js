@@ -3,47 +3,63 @@ import {
   View,
   Text,
   StyleSheet,
+  FlatList,
   TouchableOpacity,
-  ScrollView,
-  Alert,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function NotificationScreen() {
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: "New Workshop Available",
-      message: "React Native Workshop registration is now open.",
-      type: "Workshop",
-      time: "10 minutes ago",
-      read: false,
-    },
-    {
-      id: 2,
-      title: "Coding Contest",
-      message: "Coding Contest will be conducted this Saturday.",
-      type: "Event",
-      time: "1 hour ago",
-      read: false,
-    },
-    {
-      id: 3,
-      title: "Placement Drive",
-      message: "A new company has announced a placement drive.",
-      type: "Placement",
-      time: "2 hours ago",
-      read: true,
-    },
-    {
-      id: 4,
-      title: "Exam Notice",
-      message: "Semester examination schedule has been updated.",
-      type: "Academic",
-      time: "Yesterday",
-      read: true,
-    },
-  ]);
+const initialNotifications = [
+  {
+    id: "1",
+    title: "New Event Added",
+    message: "Coding Contest has been added to upcoming events.",
+    time: "Today, 10:30 AM",
+    type: "Event",
+    read: false,
+  },
+  {
+    id: "2",
+    title: "New Notice",
+    message: "A new college notice has been published.",
+    time: "Today, 09:15 AM",
+    type: "Notice",
+    read: false,
+  },
+  {
+    id: "3",
+    title: "Registration Successful",
+    message: "Your event registration was completed successfully.",
+    time: "Yesterday, 05:20 PM",
+    type: "Registration",
+    read: true,
+  },
+  {
+    id: "4",
+    title: "Event Reminder",
+    message: "Coding Contest is coming soon. Check event details.",
+    time: "Yesterday, 02:10 PM",
+    type: "Reminder",
+    read: true,
+  },
+  {
+    id: "5",
+    title: "Placement Drive",
+    message: "Placement Drive information is now available.",
+    time: "2 days ago",
+    type: "Placement",
+    read: false,
+  },
+];
+
+const filters = ["All", "Unread", "Event", "Notice", "Registration"];
+
+export default function NotificationScreen({ navigation }) {
+  const [notifications, setNotifications] =
+    useState(initialNotifications);
+
+  const [search, setSearch] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState("All");
 
   const unreadCount = notifications.filter(
     (item) => !item.read
@@ -59,27 +75,6 @@ export default function NotificationScreen() {
     );
   };
 
-  const deleteNotification = (id) => {
-    Alert.alert(
-      "Delete Notification",
-      "Do you want to delete this notification?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          onPress: () => {
-            setNotifications((current) =>
-              current.filter((item) => item.id !== id)
-            );
-          },
-        },
-      ]
-    );
-  };
-
   const markAllAsRead = () => {
     setNotifications((current) =>
       current.map((item) => ({
@@ -89,20 +84,98 @@ export default function NotificationScreen() {
     );
   };
 
+  const filteredNotifications = notifications.filter((item) => {
+    const searchText = search.toLowerCase();
+
+    const matchesSearch =
+      item.title.toLowerCase().includes(searchText) ||
+      item.message.toLowerCase().includes(searchText) ||
+      item.type.toLowerCase().includes(searchText);
+
+    let matchesFilter = true;
+
+    if (selectedFilter === "Unread") {
+      matchesFilter = !item.read;
+    } else if (selectedFilter !== "All") {
+      matchesFilter = item.type === selectedFilter;
+    }
+
+    return matchesSearch && matchesFilter;
+  });
+
   const getIcon = (type) => {
-    if (type === "Workshop") {
-      return "school";
-    }
+    switch (type) {
+      case "Event":
+        return "calendar-outline";
 
-    if (type === "Event") {
-      return "calendar";
-    }
+      case "Notice":
+        return "megaphone-outline";
 
-    if (type === "Placement") {
-      return "briefcase";
-    }
+      case "Registration":
+        return "checkmark-circle-outline";
 
-    return "document-text";
+      case "Reminder":
+        return "alarm-outline";
+
+      case "Placement":
+        return "briefcase-outline";
+
+      default:
+        return "notifications-outline";
+    }
+  };
+
+  const renderNotification = ({ item }) => {
+    return (
+      <TouchableOpacity
+        style={[
+          styles.notificationCard,
+          !item.read && styles.unreadCard,
+        ]}
+        onPress={() => markAsRead(item.id)}
+      >
+        <View
+          style={[
+            styles.iconBox,
+            !item.read && styles.unreadIconBox,
+          ]}
+        >
+          <Ionicons
+            name={getIcon(item.type)}
+            size={25}
+            color="#2563EB"
+          />
+        </View>
+
+        <View style={styles.notificationContent}>
+          <View style={styles.titleRow}>
+            <Text style={styles.notificationTitle}>
+              {item.title}
+            </Text>
+
+            {!item.read && (
+              <View style={styles.unreadDot} />
+            )}
+          </View>
+
+          <Text style={styles.message}>
+            {item.message}
+          </Text>
+
+          <View style={styles.bottomRow}>
+            <Text style={styles.time}>
+              {item.time}
+            </Text>
+
+            <View style={styles.typeBadge}>
+              <Text style={styles.typeText}>
+                {item.type}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -110,155 +183,120 @@ export default function NotificationScreen() {
 
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons
+            name="arrow-back"
+            size={27}
+            color="#fff"
+          />
+        </TouchableOpacity>
 
-        <View>
+        <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>
             Notifications
           </Text>
 
           <Text style={styles.headerSubtitle}>
-            Stay updated with Campus Connect
+            {unreadCount} unread
           </Text>
         </View>
 
-        <View style={styles.countCircle}>
-          <Text style={styles.countText}>
-            {unreadCount}
-          </Text>
-        </View>
-
-      </View>
-
-      {/* Mark All Read */}
-      {unreadCount > 0 && (
         <TouchableOpacity
-          style={styles.markAllButton}
           onPress={markAllAsRead}
+          disabled={unreadCount === 0}
         >
           <Ionicons
-            name="checkmark-done"
-            size={18}
-            color="#6C63FF"
+            name="checkmark-done-outline"
+            size={27}
+            color={
+              unreadCount === 0
+                ? "#9DB7EF"
+                : "#fff"
+            }
           />
-
-          <Text style={styles.markAllText}>
-            Mark all as read
-          </Text>
         </TouchableOpacity>
-      )}
+      </View>
+
+      {/* Search */}
+      <View style={styles.searchBox}>
+        <Ionicons
+          name="search-outline"
+          size={21}
+          color="#777"
+        />
+
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search notifications..."
+          value={search}
+          onChangeText={setSearch}
+        />
+      </View>
+
+      {/* Filter Buttons */}
+      <FlatList
+        data={filters}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item) => item}
+        contentContainerStyle={styles.filterList}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              selectedFilter === item &&
+                styles.activeFilter,
+            ]}
+            onPress={() => setSelectedFilter(item)}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                selectedFilter === item &&
+                  styles.activeFilterText,
+              ]}
+            >
+              {item}
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
+
+      {/* Result Count */}
+      <Text style={styles.resultText}>
+        {filteredNotifications.length} notification
+        {filteredNotifications.length !== 1 ? "s" : ""}
+      </Text>
 
       {/* Notification List */}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
+      {filteredNotifications.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons
+            name="notifications-off-outline"
+            size={70}
+            color="#aaa"
+          />
 
-        {notifications.length === 0 ? (
+          <Text style={styles.emptyTitle}>
+            No Notifications
+          </Text>
 
-          <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>
+            No notifications match your search or filter.
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredNotifications}
+          keyExtractor={(item) => item.id}
+          renderItem={renderNotification}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.list}
+        />
+      )}
 
-            <Ionicons
-              name="notifications-off-outline"
-              size={70}
-              color="#6C63FF"
-            />
-
-            <Text style={styles.emptyTitle}>
-              No Notifications
-            </Text>
-
-            <Text style={styles.emptyText}>
-              You are all caught up!
-            </Text>
-
-          </View>
-
-        ) : (
-
-          notifications.map((item) => (
-
-            <TouchableOpacity
-              key={item.id}
-              style={[
-                styles.notificationCard,
-                !item.read && styles.unreadCard,
-              ]}
-              onPress={() => markAsRead(item.id)}
-            >
-
-              {/* Icon */}
-              <View
-                style={[
-                  styles.iconContainer,
-                  !item.read && styles.unreadIcon,
-                ]}
-              >
-                <Ionicons
-                  name={getIcon(item.type)}
-                  size={26}
-                  color="#6C63FF"
-                />
-              </View>
-
-              {/* Notification Content */}
-              <View style={styles.notificationContent}>
-
-                <View style={styles.titleRow}>
-
-                  <Text
-                    style={[
-                      styles.notificationTitle,
-                      !item.read && styles.boldTitle,
-                    ]}
-                  >
-                    {item.title}
-                  </Text>
-
-                  {!item.read && (
-                    <View style={styles.dot} />
-                  )}
-
-                </View>
-
-                <Text style={styles.message}>
-                  {item.message}
-                </Text>
-
-                <View style={styles.bottomRow}>
-
-                  <Text style={styles.time}>
-                    {item.time}
-                  </Text>
-
-                  <Text style={styles.type}>
-                    {item.type}
-                  </Text>
-
-                </View>
-
-              </View>
-
-              {/* Delete */}
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() =>
-                  deleteNotification(item.id)
-                }
-              >
-                <Ionicons
-                  name="trash-outline"
-                  size={20}
-                  color="#888888"
-                />
-              </TouchableOpacity>
-
-            </TouchableOpacity>
-
-          ))
-
-        )}
-
-      </ScrollView>
     </View>
   );
 }
@@ -266,102 +304,125 @@ export default function NotificationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F6FA",
+    backgroundColor: "#F5F7FB",
   },
 
   header: {
-    backgroundColor: "#6C63FF",
+    backgroundColor: "#2563EB",
     paddingTop: 55,
-    paddingBottom: 25,
-    paddingHorizontal: 20,
+    paddingBottom: 18,
+    paddingHorizontal: 18,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
+    justifyContent: "space-between",
+  },
+
+  headerCenter: {
+    alignItems: "center",
   },
 
   headerTitle: {
-    fontSize: 26,
+    color: "#fff",
+    fontSize: 21,
     fontWeight: "bold",
-    color: "#FFFFFF",
   },
 
   headerSubtitle: {
+    color: "#DCE7FF",
     fontSize: 13,
-    color: "#E8E7FF",
-    marginTop: 5,
+    marginTop: 3,
   },
 
-  countCircle: {
-    width: 45,
-    height: 45,
-    borderRadius: 23,
-    backgroundColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  countText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#6C63FF",
-  },
-
-  markAllButton: {
+  searchBox: {
+    backgroundColor: "#fff",
+    marginHorizontal: 15,
+    marginTop: 15,
+    height: 50,
+    borderRadius: 12,
+    paddingHorizontal: 15,
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "flex-end",
-    marginTop: 15,
-    marginRight: 18,
+    elevation: 2,
+  },
+
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 15,
+  },
+
+  filterList: {
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+  },
+
+  filterButton: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 20,
+    paddingHorizontal: 17,
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: "#EEEEFF",
-    borderRadius: 10,
+    marginRight: 8,
   },
 
-  markAllText: {
-    color: "#6C63FF",
-    fontWeight: "600",
-    marginLeft: 5,
+  activeFilter: {
+    backgroundColor: "#2563EB",
+    borderColor: "#2563EB",
   },
 
-  content: {
-    padding: 16,
+  filterText: {
+    color: "#555",
+    fontSize: 14,
+  },
+
+  activeFilterText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+
+  resultText: {
+    marginHorizontal: 18,
+    marginBottom: 8,
+    color: "#666",
+    fontSize: 14,
+  },
+
+  list: {
+    paddingHorizontal: 15,
     paddingBottom: 30,
   },
 
   notificationCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 14,
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 15,
     marginBottom: 12,
     flexDirection: "row",
-    alignItems: "flex-start",
     elevation: 2,
   },
 
   unreadCard: {
     borderLeftWidth: 4,
-    borderLeftColor: "#6C63FF",
+    borderLeftColor: "#2563EB",
   },
 
-  iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 15,
-    backgroundColor: "#F1F1F8",
+  iconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#F0F2F5",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 10,
   },
 
-  unreadIcon: {
-    backgroundColor: "#EEEEFF",
+  unreadIconBox: {
+    backgroundColor: "#E8F0FF",
   },
 
   notificationContent: {
     flex: 1,
+    marginLeft: 12,
   },
 
   titleRow: {
@@ -370,68 +431,71 @@ const styles = StyleSheet.create({
   },
 
   notificationTitle: {
-    fontSize: 16,
-    color: "#333333",
     flex: 1,
-  },
-
-  boldTitle: {
+    fontSize: 16,
     fontWeight: "bold",
+    color: "#222",
   },
 
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#6C63FF",
-    marginLeft: 5,
+  unreadDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: "#2563EB",
+    marginLeft: 8,
   },
 
   message: {
-    fontSize: 13,
-    color: "#777777",
-    lineHeight: 19,
+    color: "#666",
+    fontSize: 14,
+    lineHeight: 20,
     marginTop: 5,
   },
 
   bottomRow: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 8,
+    marginTop: 9,
   },
 
   time: {
-    fontSize: 11,
-    color: "#999999",
+    color: "#888",
+    fontSize: 12,
   },
 
-  type: {
-    fontSize: 11,
-    color: "#6C63FF",
-    fontWeight: "600",
+  typeBadge: {
+    backgroundColor: "#E8F0FF",
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 7,
   },
 
-  deleteButton: {
-    padding: 5,
-    marginLeft: 5,
+  typeText: {
+    color: "#2563EB",
+    fontSize: 11,
+    fontWeight: "bold",
   },
 
   emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    marginTop: 120,
     paddingHorizontal: 30,
+    paddingBottom: 80,
   },
 
   emptyTitle: {
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: "bold",
-    color: "#333333",
+    color: "#444",
     marginTop: 15,
   },
 
   emptyText: {
+    color: "#777",
     fontSize: 14,
-    color: "#777777",
+    textAlign: "center",
     marginTop: 7,
   },
 });
