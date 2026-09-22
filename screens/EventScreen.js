@@ -1,77 +1,90 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  TextInput,
-  TouchableOpacity,
   FlatList,
+  TouchableOpacity,
+  TextInput,
   Alert,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
 
 const STORAGE_KEY = "my_registrations";
 
-const EventScreen = ({ navigation }) => {
+const eventsData = [
+  {
+    id: "1",
+    title: "Coding Contest",
+    category: "Technical",
+    date: "15 September 2026",
+    time: "11:00 AM",
+    venue: "Computer Lab",
+    description:
+      "Participate in the coding contest and test your programming skills.",
+    seats: 50,
+  },
+  {
+    id: "2",
+    title: "Cultural Fest",
+    category: "Cultural",
+    date: "20 September 2026",
+    time: "10:00 AM",
+    venue: "College Auditorium",
+    description:
+      "Enjoy music, dance and other cultural activities.",
+    seats: 100,
+  },
+  {
+    id: "3",
+    title: "Sports Meet",
+    category: "Sports",
+    date: "25 September 2026",
+    time: "9:00 AM",
+    venue: "College Ground",
+    description:
+      "Students can participate in different sports activities.",
+    seats: 80,
+  },
+  {
+    id: "4",
+    title: "React Native Workshop",
+    category: "Workshop",
+    date: "28 September 2026",
+    time: "2:00 PM",
+    venue: "Seminar Hall",
+    description:
+      "Learn the basics of React Native and mobile application development.",
+    seats: 40,
+  },
+  {
+    id: "5",
+    title: "AI and Machine Learning Seminar",
+    category: "Technical",
+    date: "30 September 2026",
+    time: "11:00 AM",
+    venue: "Block A Seminar Hall",
+    description:
+      "Introduction to Artificial Intelligence and Machine Learning concepts.",
+    seats: 70,
+  },
+];
+
+const categories = [
+  "All",
+  "Technical",
+  "Workshop",
+  "Cultural",
+  "Sports",
+];
+
+export default function EventScreen({ navigation }) {
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] =
+    useState("All");
+
   const [registrations, setRegistrations] = useState([]);
-
-  const categories = [
-    "All",
-    "Workshop",
-    "Technical",
-    "Cultural",
-    "Sports",
-  ];
-
-  const events = [
-    {
-      id: "1",
-      title: "React Native Workshop",
-      category: "Workshop",
-      date: "10 September 2026",
-      time: "10:00 AM",
-      venue: "Seminar Hall",
-      seats: 40,
-      description:
-        "Learn React Native and build mobile applications.",
-    },
-    {
-      id: "2",
-      title: "Coding Contest",
-      category: "Technical",
-      date: "15 September 2026",
-      time: "11:00 AM",
-      venue: "Computer Lab",
-      seats: 30,
-      description:
-        "Participate in a coding contest and improve your programming skills.",
-    },
-    {
-      id: "3",
-      title: "Cultural Fest",
-      category: "Cultural",
-      date: "20 September 2026",
-      time: "5:00 PM",
-      venue: "College Auditorium",
-      seats: 100,
-      description:
-        "Enjoy music, dance and cultural activities.",
-    },
-    {
-      id: "4",
-      title: "Inter College Sports Meet",
-      category: "Sports",
-      date: "25 September 2026",
-      time: "9:00 AM",
-      venue: "College Ground",
-      seats: 50,
-      description:
-        "Participate in different sports competitions.",
-    },
-  ];
 
   useEffect(() => {
     loadRegistrations();
@@ -85,45 +98,19 @@ const EventScreen = ({ navigation }) => {
         setRegistrations(JSON.parse(data));
       }
     } catch (error) {
-      console.log(error);
+      console.log("Error loading registrations:", error);
     }
   };
 
   const isRegistered = (eventId) => {
     return registrations.some(
-      (item) =>
-        item.id === eventId &&
-        item.status !== "Cancelled"
+      (item) => item.eventId === eventId
     );
   };
 
-  const getAvailableSeats = (event) => {
-    const registeredCount = registrations.filter(
-      (item) =>
-        item.id === event.id &&
-        item.status !== "Cancelled"
-    ).length;
-
-    return Math.max(event.seats - registeredCount, 0);
-  };
-
-  const registerForEvent = async (event) => {
+  const registerEvent = async (event) => {
     try {
-      const existingData =
-        await AsyncStorage.getItem(STORAGE_KEY);
-
-      const currentRegistrations = existingData
-        ? JSON.parse(existingData)
-        : [];
-
-      const alreadyRegistered =
-        currentRegistrations.some(
-          (item) =>
-            item.id === event.id &&
-            item.status !== "Cancelled"
-        );
-
-      if (alreadyRegistered) {
+      if (isRegistered(event.id)) {
         Alert.alert(
           "Already Registered",
           "You are already registered for this event."
@@ -131,108 +118,42 @@ const EventScreen = ({ navigation }) => {
         return;
       }
 
-      const availableSeats = Math.max(
-        event.seats -
-          currentRegistrations.filter(
-            (item) =>
-              item.id === event.id &&
-              item.status !== "Cancelled"
-          ).length,
-        0
-      );
-
-      if (availableSeats === 0) {
-        Alert.alert(
-          "Registration Closed",
-          "No seats are available for this event."
-        );
-        return;
-      }
-
-      const registrationId =
-        `REG${String(
-          currentRegistrations.length + 1
-        ).padStart(3, "0")}`;
-
-      const newRegistration = {
-        ...event,
-        registrationId,
-        status: "Registered",
+      const registration = {
+        id: Date.now().toString(),
+        eventId: event.id,
+        eventName: event.title,
+        category: event.category,
+        date: event.date,
+        time: event.time,
+        venue: event.venue,
+        registrationDate: new Date().toLocaleDateString(),
       };
 
-      const updatedRegistrations = [
-        ...currentRegistrations,
-        newRegistration,
-      ];
+      const updated = [...registrations, registration];
+
+      setRegistrations(updated);
 
       await AsyncStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify(updatedRegistrations)
+        JSON.stringify(updated)
       );
-
-      setRegistrations(updatedRegistrations);
 
       Alert.alert(
         "Registration Successful",
-        `You are registered for ${event.title}.\n\nRegistration ID: ${registrationId}`
+        `You are registered for ${event.title}.`
       );
     } catch (error) {
-      console.log(error);
-
-      Alert.alert(
-        "Error",
-        "Unable to register for the event."
-      );
+      console.log("Registration error:", error);
     }
   };
 
-  const showEventDetails = (event) => {
-    const availableSeats = getAvailableSeats(event);
-    const registered = isRegistered(event.id);
+  const filteredEvents = eventsData.filter((event) => {
+    const searchText = search.toLowerCase();
 
-    Alert.alert(
-      event.title,
-      `Category: ${event.category}
-
-Date: ${event.date}
-Time: ${event.time}
-Venue: ${event.venue}
-
-Seats Available: ${availableSeats}
-
-${event.description}`,
-      [
-        registered
-          ? {
-              text: "Already Registered",
-              style: "cancel",
-            }
-          : availableSeats > 0
-          ? {
-              text: "Register",
-              onPress: () =>
-                registerForEvent(event),
-            }
-          : {
-              text: "Registration Closed",
-              style: "cancel",
-            },
-        {
-          text: "Close",
-          style: "cancel",
-        },
-      ]
-    );
-  };
-
-  const filteredEvents = events.filter((event) => {
     const matchesSearch =
-      event.title
-        .toLowerCase()
-        .includes(search.toLowerCase()) ||
-      event.description
-        .toLowerCase()
-        .includes(search.toLowerCase());
+      event.title.toLowerCase().includes(searchText) ||
+      event.category.toLowerCase().includes(searchText) ||
+      event.venue.toLowerCase().includes(searchText);
 
     const matchesCategory =
       selectedCategory === "All" ||
@@ -242,42 +163,40 @@ ${event.description}`,
   });
 
   const renderEvent = ({ item }) => {
-    const availableSeats = getAvailableSeats(item);
     const registered = isRegistered(item.id);
-    const isFull = availableSeats === 0;
 
     return (
       <View style={styles.eventCard}>
 
-        {/* TOP */}
-        <View style={styles.eventTop}>
-
-          <View style={styles.iconBox}>
+        {/* Event Header */}
+        <View style={styles.topRow}>
+          <View style={styles.eventIcon}>
             <Ionicons
               name="calendar-outline"
-              size={28}
-              color="#6C63FF"
+              size={27}
+              color="#2563EB"
             />
           </View>
 
-          <View style={styles.eventContent}>
+          <View style={styles.titleContainer}>
             <Text style={styles.eventTitle}>
               {item.title}
             </Text>
 
-            <Text style={styles.category}>
-              {item.category}
-            </Text>
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>
+                {item.category}
+              </Text>
+            </View>
           </View>
-
         </View>
 
-        {/* EVENT INFO */}
+        {/* Event Information */}
         <View style={styles.infoRow}>
           <Ionicons
             name="calendar-outline"
-            size={17}
-            color="#666"
+            size={20}
+            color="#2563EB"
           />
 
           <Text style={styles.infoText}>
@@ -288,8 +207,8 @@ ${event.description}`,
         <View style={styles.infoRow}>
           <Ionicons
             name="time-outline"
-            size={17}
-            color="#666"
+            size={20}
+            color="#2563EB"
           />
 
           <Text style={styles.infoText}>
@@ -300,8 +219,8 @@ ${event.description}`,
         <View style={styles.infoRow}>
           <Ionicons
             name="location-outline"
-            size={17}
-            color="#666"
+            size={20}
+            color="#2563EB"
           />
 
           <Text style={styles.infoText}>
@@ -309,100 +228,64 @@ ${event.description}`,
           </Text>
         </View>
 
-        {/* STATUS */}
-        <View
+        {/* Seats */}
+        <View style={styles.seatRow}>
+          <Ionicons
+            name="people-outline"
+            size={20}
+            color="#555"
+          />
+
+          <Text style={styles.seatText}>
+            {item.seats} seats available
+          </Text>
+        </View>
+
+        {/* Description */}
+        <Text style={styles.description}>
+          {item.description}
+        </Text>
+
+        {/* Registration Status */}
+        {registered && (
+          <View style={styles.registeredBox}>
+            <Ionicons
+              name="checkmark-circle"
+              size={20}
+              color="#16A34A"
+            />
+
+            <Text style={styles.registeredText}>
+              You are registered
+            </Text>
+          </View>
+        )}
+
+        {/* Register Button */}
+        <TouchableOpacity
           style={[
-            styles.statusBox,
-            isFull && styles.closedStatusBox,
+            styles.registerButton,
+            registered && styles.registeredButton,
           ]}
+          onPress={() => registerEvent(item)}
         >
           <Ionicons
             name={
-              isFull
-                ? "close-circle"
-                : "checkmark-circle"
+              registered
+                ? "checkmark-circle-outline"
+                : "person-add-outline"
             }
-            size={19}
-            color={
-              isFull
-                ? "#D64545"
-                : "#249653"
-            }
+            size={20}
+            color="#fff"
           />
 
-          <Text
-            style={[
-              styles.statusText,
-              isFull && styles.closedStatusText,
-            ]}
-          >
-            {isFull
-              ? "Registration Closed"
-              : "Open for Registration"}
+          <Text style={styles.registerButtonText}>
+            {registered
+              ? "Registered"
+              : "Register Now"}
           </Text>
+        </TouchableOpacity>
 
-          {!isFull && (
-            <Text style={styles.seatsText}>
-              {availableSeats} Seats Available
-            </Text>
-          )}
-        </View>
-
-        {/* BUTTONS */}
-        <View style={styles.buttonRow}>
-
-          <TouchableOpacity
-            style={styles.detailsButton}
-            onPress={() =>
-              showEventDetails(item)
-            }
-          >
-            <Ionicons
-              name="eye-outline"
-              size={18}
-              color="#6C63FF"
-            />
-
-            <Text style={styles.detailsText}>
-              View Details
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.registerButton,
-              registered &&
-                styles.registeredButton,
-              isFull &&
-                styles.closedButton,
-            ]}
-            disabled={registered || isFull}
-            onPress={() =>
-              registerForEvent(item)
-            }
-          >
-            <Ionicons
-              name={
-                registered
-                  ? "checkmark-circle"
-                  : isFull
-                  ? "close-circle"
-                  : "person-add-outline"
-              }
-              size={18}
-              color="white"
-            />
-
-            <Text style={styles.registerButtonText}>
-              {registered
-                ? "Registered"
-                : isFull
-                ? "Closed"
-                : "Register Now"}
-            </Text>
-          </TouchableOpacity>
-
-        </View>
       </View>
     );
   };
@@ -410,51 +293,43 @@ ${event.description}`,
   return (
     <View style={styles.container}>
 
-      {/* HEADER */}
+      {/* Header */}
       <View style={styles.header}>
-
         <TouchableOpacity
           onPress={() => navigation.goBack()}
         >
           <Ionicons
             name="arrow-back"
             size={27}
-            color="white"
+            color="#fff"
           />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>
-          Events
-        </Text>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>
+            Events
+          </Text>
+
+          <Text style={styles.headerSubtitle}>
+            Discover college events
+          </Text>
+        </View>
 
         <TouchableOpacity
           onPress={() =>
-            navigation.navigate(
-              "MyRegistrations"
-            )
+            navigation.navigate("MyRegistrations")
           }
         >
-          <View style={styles.headerIcon}>
-            <Ionicons
-              name="clipboard-outline"
-              size={23}
-              color="#6C63FF"
-            />
-
-            <Text style={styles.headerCount}>
-              {registrations.filter(
-                (item) =>
-                  item.status !== "Cancelled"
-              ).length}
-            </Text>
-          </View>
+          <Ionicons
+            name="ticket-outline"
+            size={27}
+            color="#fff"
+          />
         </TouchableOpacity>
-
       </View>
 
-      {/* SEARCH */}
+      {/* Search */}
       <View style={styles.searchBox}>
-
         <Ionicons
           name="search-outline"
           size={21}
@@ -467,36 +342,21 @@ ${event.description}`,
           value={search}
           onChangeText={setSearch}
         />
-
-        {search.length > 0 && (
-          <TouchableOpacity
-            onPress={() => setSearch("")}
-          >
-            <Ionicons
-              name="close-circle"
-              size={20}
-              color="#999"
-            />
-          </TouchableOpacity>
-        )}
-
       </View>
 
-      {/* CATEGORIES */}
+      {/* Categories */}
       <FlatList
+        data={categories}
         horizontal
         showsHorizontalScrollIndicator={false}
-        data={categories}
         keyExtractor={(item) => item}
-        contentContainerStyle={
-          styles.categoryList
-        }
+        contentContainerStyle={styles.categoryList}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[
-              styles.categoryButton,
+              styles.filterButton,
               selectedCategory === item &&
-                styles.selectedCategory,
+                styles.activeFilter,
             ]}
             onPress={() =>
               setSelectedCategory(item)
@@ -504,9 +364,9 @@ ${event.description}`,
           >
             <Text
               style={[
-                styles.categoryText,
+                styles.filterText,
                 selectedCategory === item &&
-                  styles.selectedCategoryText,
+                  styles.activeFilterText,
               ]}
             >
               {item}
@@ -515,75 +375,79 @@ ${event.description}`,
         )}
       />
 
-      {/* EVENT LIST */}
-      <FlatList
-        data={filteredEvents}
-        keyExtractor={(item) => item.id}
-        renderItem={renderEvent}
-        contentContainerStyle={
-          styles.eventList
-        }
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyBox}>
-            <Ionicons
-              name="calendar-outline"
-              size={60}
-              color="#aaa"
-            />
+      {/* Result Count */}
+      <Text style={styles.resultText}>
+        {filteredEvents.length} event
+        {filteredEvents.length !== 1 ? "s" : ""} found
+      </Text>
 
-            <Text style={styles.emptyText}>
-              No events found
-            </Text>
-          </View>
-        }
-      />
+      {/* Events */}
+      {filteredEvents.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons
+            name="calendar-outline"
+            size={70}
+            color="#aaa"
+          />
+
+          <Text style={styles.emptyTitle}>
+            No Events Found
+          </Text>
+
+          <Text style={styles.emptyText}>
+            Try another search or category.
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredEvents}
+          keyExtractor={(item) => item.id}
+          renderItem={renderEvent}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.list}
+        />
+      )}
 
     </View>
   );
-};
-
-export default EventScreen;
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F7F7FB",
+    backgroundColor: "#F5F7FB",
   },
 
   header: {
-    height: 65,
-    backgroundColor: "#6C63FF",
+    backgroundColor: "#2563EB",
+    paddingTop: 55,
+    paddingBottom: 18,
+    paddingHorizontal: 18,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 18,
+  },
+
+  headerCenter: {
+    alignItems: "center",
   },
 
   headerTitle: {
-    color: "white",
+    color: "#fff",
     fontSize: 21,
     fontWeight: "bold",
   },
 
-  headerIcon: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  headerCount: {
-    color: "#6C63FF",
-    fontWeight: "bold",
-    marginLeft: 4,
+  headerSubtitle: {
+    color: "#DCE7FF",
+    fontSize: 13,
+    marginTop: 3,
   },
 
   searchBox: {
-    backgroundColor: "white",
-    margin: 15,
+    backgroundColor: "#fff",
+    marginHorizontal: 15,
+    marginTop: 15,
     height: 50,
     borderRadius: 12,
     paddingHorizontal: 15,
@@ -600,178 +464,179 @@ const styles = StyleSheet.create({
 
   categoryList: {
     paddingHorizontal: 15,
-    paddingBottom: 10,
+    paddingVertical: 12,
   },
 
-  categoryButton: {
-    backgroundColor: "white",
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    borderRadius: 20,
-    marginRight: 8,
+  filterButton: {
+    backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#ddd",
+    borderRadius: 20,
+    paddingHorizontal: 17,
+    paddingVertical: 8,
+    marginRight: 8,
   },
 
-  selectedCategory: {
-    backgroundColor: "#6C63FF",
-    borderColor: "#6C63FF",
+  activeFilter: {
+    backgroundColor: "#2563EB",
+    borderColor: "#2563EB",
   },
 
-  categoryText: {
+  filterText: {
     color: "#555",
-    fontWeight: "500",
+    fontSize: 14,
   },
 
-  selectedCategoryText: {
-    color: "white",
+  activeFilterText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 
-  eventList: {
-    padding: 15,
+  resultText: {
+    marginHorizontal: 18,
+    marginBottom: 8,
+    color: "#666",
+    fontSize: 14,
+  },
+
+  list: {
+    paddingHorizontal: 15,
     paddingBottom: 30,
   },
 
   eventCard: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 15,
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 16,
     marginBottom: 14,
-    elevation: 2,
+    elevation: 3,
   },
 
-  eventTop: {
+  topRow: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 15,
   },
 
-  iconBox: {
-    width: 55,
-    height: 55,
-    borderRadius: 12,
-    backgroundColor: "#EEEEFF",
+  eventIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 13,
+    backgroundColor: "#E8F0FF",
     justifyContent: "center",
     alignItems: "center",
   },
 
-  eventContent: {
+  titleContainer: {
     flex: 1,
     marginLeft: 12,
   },
 
   eventTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "bold",
     color: "#222",
   },
 
-  category: {
-    color: "#6C63FF",
-    fontSize: 13,
-    fontWeight: "600",
-    marginTop: 5,
+  categoryBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#E8F0FF",
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 7,
+    marginTop: 6,
+  },
+
+  categoryText: {
+    color: "#2563EB",
+    fontSize: 11,
+    fontWeight: "bold",
   },
 
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 9,
   },
 
   infoText: {
-    marginLeft: 7,
+    marginLeft: 9,
+    color: "#555",
+    fontSize: 14,
+  },
+
+  seatRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+  },
+
+  seatText: {
+    marginLeft: 9,
     color: "#555",
     fontSize: 13,
   },
 
-  statusBox: {
-    marginTop: 13,
-    backgroundColor: "#EAF8EF",
-    borderRadius: 10,
+  description: {
+    color: "#666",
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 12,
+  },
+
+  registeredBox: {
+    backgroundColor: "#E8F7EE",
+    borderRadius: 9,
     padding: 10,
     flexDirection: "row",
     alignItems: "center",
+    marginTop: 13,
   },
 
-  closedStatusBox: {
-    backgroundColor: "#FDECEC",
-  },
-
-  statusText: {
-    color: "#249653",
+  registeredText: {
+    color: "#16A34A",
     fontWeight: "bold",
-    fontSize: 12,
-    marginLeft: 6,
-  },
-
-  closedStatusText: {
-    color: "#D64545",
-  },
-
-  seatsText: {
-    marginLeft: "auto",
-    color: "#555",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-
-  buttonRow: {
-    flexDirection: "row",
-    marginTop: 15,
-    gap: 10,
-  },
-
-  detailsButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#6C63FF",
-    borderRadius: 10,
-    paddingVertical: 11,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-  },
-
-  detailsText: {
-    color: "#6C63FF",
-    fontWeight: "bold",
-    marginLeft: 5,
+    marginLeft: 7,
     fontSize: 13,
   },
 
   registerButton: {
-    flex: 1,
-    backgroundColor: "#6C63FF",
-    borderRadius: 10,
-    paddingVertical: 11,
-    alignItems: "center",
+    height: 48,
+    backgroundColor: "#2563EB",
+    borderRadius: 11,
     justifyContent: "center",
+    alignItems: "center",
     flexDirection: "row",
+    marginTop: 14,
   },
 
   registeredButton: {
-    backgroundColor: "#249653",
-  },
-
-  closedButton: {
-    backgroundColor: "#999",
+    backgroundColor: "#16A34A",
   },
 
   registerButtonText: {
-    color: "white",
+    color: "#fff",
+    fontSize: 15,
     fontWeight: "bold",
-    marginLeft: 5,
-    fontSize: 13,
+    marginLeft: 7,
   },
 
-  emptyBox: {
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    marginTop: 80,
+    paddingBottom: 80,
+  },
+
+  emptyTitle: {
+    fontSize: 21,
+    fontWeight: "bold",
+    color: "#444",
+    marginTop: 15,
   },
 
   emptyText: {
-    marginTop: 10,
     color: "#777",
-    fontSize: 16,
+    marginTop: 7,
   },
 });
