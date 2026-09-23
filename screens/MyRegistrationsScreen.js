@@ -1,145 +1,87 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
-  Modal,
   TextInput,
   Alert,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 
 const STORAGE_KEY = "my_registrations";
 
-const MyRegistrationsScreen = ({ navigation }) => {
+const categories = [
+  "All",
+  "Technical",
+  "Workshop",
+  "Cultural",
+  "Sports",
+];
+
+export default function MyRegistrationsScreen({ navigation }) {
   const [registrations, setRegistrations] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
-
-  // NEW - Search and filter
   const [search, setSearch] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("All");
+  const [selectedCategory, setSelectedCategory] =
+    useState("All");
 
-  // Load whenever screen opens
-  useFocusEffect(
-    useCallback(() => {
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
       loadRegistrations();
-    }, [])
-  );
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const loadRegistrations = async () => {
     try {
-      setLoading(true);
+      const data = await AsyncStorage.getItem(STORAGE_KEY);
 
-      const savedData =
-        await AsyncStorage.getItem(STORAGE_KEY);
-
-      if (savedData) {
-        setRegistrations(JSON.parse(savedData));
+      if (data) {
+        setRegistrations(JSON.parse(data));
       } else {
         setRegistrations([]);
       }
     } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
+      console.log("Error loading registrations:", error);
     }
   };
 
-  // Counts
-  const totalCount = registrations.length;
-
-  const registeredCount = registrations.filter(
-    (item) => item.status !== "Cancelled"
-  ).length;
-
-  const cancelledCount = registrations.filter(
-    (item) => item.status === "Cancelled"
-  ).length;
-
-  // Search + Filter
-  const filteredRegistrations = registrations.filter((item) => {
-    const searchText = search.toLowerCase();
-
-    const matchesSearch =
-      item.title.toLowerCase().includes(searchText) ||
-      item.category.toLowerCase().includes(searchText) ||
-      item.venue.toLowerCase().includes(searchText) ||
-      (item.registrationId &&
-        item.registrationId
-          .toLowerCase()
-          .includes(searchText));
-
-    let matchesFilter = true;
-
-    if (selectedFilter === "Registered") {
-      matchesFilter = item.status !== "Cancelled";
-    }
-
-    if (selectedFilter === "Cancelled") {
-      matchesFilter = item.status === "Cancelled";
-    }
-
-    return matchesSearch && matchesFilter;
-  });
-
-  // View details
-  const viewDetails = (item) => {
-    setSelectedEvent(item);
-    setModalVisible(true);
-  };
-
-  const closeModal = () => {
-    setModalVisible(false);
-    setSelectedEvent(null);
-  };
-
-  // Cancel registration
-  const cancelRegistration = (item) => {
+  const cancelRegistration = (registrationId) => {
     Alert.alert(
       "Cancel Registration",
-      `Are you sure you want to cancel ${item.title}?`,
+      "Are you sure you want to cancel this registration?",
       [
         {
-          text: "Keep",
+          text: "No",
           style: "cancel",
         },
         {
-          text: "Cancel",
+          text: "Yes, Cancel",
           style: "destructive",
           onPress: async () => {
             try {
-              const updatedRegistrations =
-                registrations.map((registration) => {
-                  if (registration.id === item.id) {
-                    return {
-                      ...registration,
-                      status: "Cancelled",
-                    };
-                  }
+              const updated = registrations.filter(
+                (item) => item.id !== registrationId
+              );
 
-                  return registration;
-                });
+              setRegistrations(updated);
 
               await AsyncStorage.setItem(
                 STORAGE_KEY,
-                JSON.stringify(updatedRegistrations)
+                JSON.stringify(updated)
               );
 
-              setRegistrations(updatedRegistrations);
-            } catch (error) {
-              console.log(error);
-
               Alert.alert(
-                "Error",
-                "Unable to cancel registration."
+                "Cancelled",
+                "Registration cancelled successfully."
+              );
+            } catch (error) {
+              console.log(
+                "Error cancelling registration:",
+                error
               );
             }
           },
@@ -148,206 +90,150 @@ const MyRegistrationsScreen = ({ navigation }) => {
     );
   };
 
-  // Empty state
-  const EmptyState = () => {
-    const isSearching =
-      search.trim().length > 0 ||
-      selectedFilter !== "All";
+  const filteredRegistrations = registrations.filter(
+    (item) => {
+      const searchText = search.toLowerCase();
 
-    return (
-      <View style={styles.emptyContainer}>
-        <View style={styles.emptyIcon}>
-          <Ionicons
-            name={
-              isSearching
-                ? "search-outline"
-                : "clipboard-outline"
-            }
-            size={48}
-            color="#6C63FF"
-          />
-        </View>
+      const matchesSearch =
+        item.eventName
+          ?.toLowerCase()
+          .includes(searchText) ||
+        item.category
+          ?.toLowerCase()
+          .includes(searchText) ||
+        item.venue
+          ?.toLowerCase()
+          .includes(searchText) ||
+        item.id
+          ?.toLowerCase()
+          .includes(searchText);
 
-        <Text style={styles.emptyTitle}>
-          {isSearching
-            ? "No registrations found"
-            : "No Registrations"}
-        </Text>
+      const matchesCategory =
+        selectedCategory === "All" ||
+        item.category === selectedCategory;
 
-        <Text style={styles.emptyText}>
-          {isSearching
-            ? "Try a different search or filter."
-            : "You have not registered for any events yet."}
-        </Text>
+      return matchesSearch && matchesCategory;
+    }
+  );
 
-        {!isSearching && (
-          <TouchableOpacity
-            style={styles.browseButton}
-            onPress={() =>
-              navigation.navigate("Events")
-            }
-          >
-            <Ionicons
-              name="calendar-outline"
-              size={20}
-              color="white"
-            />
-
-            <Text style={styles.browseButtonText}>
-              Browse Events
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    );
-  };
-
-  // Registration card
   const renderRegistration = ({ item }) => {
-    const isCancelled =
-      item.status === "Cancelled";
-
     return (
       <View style={styles.card}>
 
-        {/* Top */}
-        <View style={styles.cardTop}>
+        {/* Header */}
+        <View style={styles.topRow}>
           <View style={styles.iconBox}>
             <Ionicons
-              name="clipboard-outline"
-              size={28}
-              color="#6C63FF"
+              name="ticket-outline"
+              size={27}
+              color="#2563EB"
             />
           </View>
 
           <View style={styles.titleContainer}>
             <Text style={styles.eventTitle}>
-              {item.title}
+              {item.eventName}
+            </Text>
+
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>
+                {item.category}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.statusBadge}>
+            <Text style={styles.statusText}>
+              Registered
+            </Text>
+          </View>
+        </View>
+
+        {/* Event Details */}
+        <View style={styles.infoContainer}>
+
+          <View style={styles.infoRow}>
+            <Ionicons
+              name="calendar-outline"
+              size={19}
+              color="#2563EB"
+            />
+
+            <Text style={styles.infoText}>
+              {item.date}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Ionicons
+              name="time-outline"
+              size={19}
+              color="#2563EB"
+            />
+
+            <Text style={styles.infoText}>
+              {item.time}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Ionicons
+              name="location-outline"
+              size={19}
+              color="#2563EB"
+            />
+
+            <Text style={styles.infoText}>
+              {item.venue}
+            </Text>
+          </View>
+
+        </View>
+
+        {/* Registration ID */}
+        <View style={styles.registrationBox}>
+          <View>
+            <Text style={styles.registrationLabel}>
+              Registration ID
             </Text>
 
             <Text style={styles.registrationId}>
-              Registration ID:{" "}
-              {item.registrationId || "REG001"}
+              {item.id}
             </Text>
           </View>
 
-          <View
-            style={[
-              styles.statusBadge,
-              isCancelled &&
-                styles.cancelledBadge,
-            ]}
-          >
-            <Ionicons
-              name={
-                isCancelled
-                  ? "close-circle"
-                  : "checkmark-circle"
-              }
-              size={15}
-              color={
-                isCancelled
-                  ? "#D64545"
-                  : "#249653"
-              }
-            />
-
-            <Text
-              style={[
-                styles.statusText,
-                isCancelled &&
-                  styles.cancelledText,
-              ]}
-            >
-              {isCancelled
-                ? "Cancelled"
-                : "Registered"}
-            </Text>
-          </View>
+          <Ionicons
+            name="checkmark-circle"
+            size={25}
+            color="#16A34A"
+          />
         </View>
 
-        {/* Category */}
-        <Text style={styles.category}>
-          {item.category}
-        </Text>
+        {/* Registration Date */}
+        {item.registrationDate && (
+          <Text style={styles.registeredDate}>
+            Registered on: {item.registrationDate}
+          </Text>
+        )}
 
-        {/* Date */}
-        <View style={styles.infoRow}>
+        {/* Cancel */}
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={() =>
+            cancelRegistration(item.id)
+          }
+        >
           <Ionicons
-            name="calendar-outline"
-            size={18}
-            color="#666"
+            name="close-circle-outline"
+            size={20}
+            color="#DC2626"
           />
 
-          <Text style={styles.infoText}>
-            {item.date}
+          <Text style={styles.cancelText}>
+            Cancel Registration
           </Text>
-        </View>
+        </TouchableOpacity>
 
-        {/* Time */}
-        <View style={styles.infoRow}>
-          <Ionicons
-            name="time-outline"
-            size={18}
-            color="#666"
-          />
-
-          <Text style={styles.infoText}>
-            {item.time}
-          </Text>
-        </View>
-
-        {/* Venue */}
-        <View style={styles.infoRow}>
-          <Ionicons
-            name="location-outline"
-            size={18}
-            color="#666"
-          />
-
-          <Text style={styles.infoText}>
-            {item.venue}
-          </Text>
-        </View>
-
-        {/* Buttons */}
-        <View style={styles.buttonRow}>
-
-          <TouchableOpacity
-            style={styles.detailsButton}
-            onPress={() => viewDetails(item)}
-          >
-            <Ionicons
-              name="eye-outline"
-              size={19}
-              color="#6C63FF"
-            />
-
-            <Text style={styles.detailsText}>
-              View Details
-            </Text>
-          </TouchableOpacity>
-
-          {!isCancelled && (
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() =>
-                cancelRegistration(item)
-              }
-            >
-              <Ionicons
-                name="close-circle-outline"
-                size={19}
-                color="white"
-              />
-
-              <Text style={styles.cancelText}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
-          )}
-
-        </View>
       </View>
     );
   };
@@ -355,492 +241,264 @@ const MyRegistrationsScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
 
-      {/* HEADER */}
+      {/* Header */}
       <View style={styles.header}>
-
         <TouchableOpacity
           onPress={() => navigation.goBack()}
         >
           <Ionicons
             name="arrow-back"
             size={27}
-            color="white"
+            color="#fff"
           />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>
-          My Registrations
-        </Text>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>
+            My Registrations
+          </Text>
 
-        <View style={styles.countBadge}>
-          <Ionicons
-            name="clipboard-outline"
-            size={20}
-            color="#6C63FF"
-          />
-
-          <Text style={styles.countText}>
-            {totalCount}
+          <Text style={styles.headerSubtitle}>
+            {registrations.length} registration
+            {registrations.length !== 1 ? "s" : ""}
           </Text>
         </View>
-
-      </View>
-
-      {/* SUMMARY */}
-      <View style={styles.summaryCard}>
-
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryNumber}>
-            {totalCount}
-          </Text>
-
-          <Text style={styles.summaryLabel}>
-            Total
-          </Text>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.summaryItem}>
-          <Text
-            style={[
-              styles.summaryNumber,
-              { color: "#249653" },
-            ]}
-          >
-            {registeredCount}
-          </Text>
-
-          <Text style={styles.summaryLabel}>
-            Registered
-          </Text>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.summaryItem}>
-          <Text
-            style={[
-              styles.summaryNumber,
-              { color: "#D64545" },
-            ]}
-          >
-            {cancelledCount}
-          </Text>
-
-          <Text style={styles.summaryLabel}>
-            Cancelled
-          </Text>
-        </View>
-
-      </View>
-
-      {/* SEARCH */}
-      <View style={styles.searchBox}>
 
         <Ionicons
-          name="search-outline"
-          size={21}
-          color="#777"
+          name="ticket"
+          size={27}
+          color="#fff"
         />
-
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search registrations..."
-          value={search}
-          onChangeText={setSearch}
-        />
-
-        {search.length > 0 && (
-          <TouchableOpacity
-            onPress={() => setSearch("")}
-          >
-            <Ionicons
-              name="close-circle"
-              size={20}
-              color="#999"
-            />
-          </TouchableOpacity>
-        )}
-
       </View>
 
-      {/* FILTERS */}
-      <View style={styles.filterContainer}>
+      {/* Search */}
+      {registrations.length > 0 && (
+        <View style={styles.searchBox}>
+          <Ionicons
+            name="search-outline"
+            size={21}
+            color="#777"
+          />
 
-        {[
-          `All ${totalCount}`,
-          `Registered ${registeredCount}`,
-          `Cancelled ${cancelledCount}`,
-        ].map((filter) => {
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search registrations..."
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
+      )}
 
-          const filterName = filter.split(" ")[0];
-
-          return (
+      {/* Categories */}
+      {registrations.length > 0 && (
+        <FlatList
+          data={categories}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(item) => item}
+          contentContainerStyle={styles.categoryList}
+          renderItem={({ item }) => (
             <TouchableOpacity
-              key={filter}
               style={[
                 styles.filterButton,
-                selectedFilter === filterName &&
-                  styles.selectedFilter,
+                selectedCategory === item &&
+                  styles.activeFilter,
               ]}
               onPress={() =>
-                setSelectedFilter(filterName)
+                setSelectedCategory(item)
               }
             >
               <Text
                 style={[
                   styles.filterText,
-                  selectedFilter === filterName &&
-                    styles.selectedFilterText,
+                  selectedCategory === item &&
+                    styles.activeFilterText,
                 ]}
               >
-                {filter}
+                {item}
               </Text>
             </TouchableOpacity>
-          );
-        })}
+          )}
+        />
+      )}
 
-      </View>
+      {/* Count */}
+      {registrations.length > 0 && (
+        <Text style={styles.resultText}>
+          {filteredRegistrations.length} registration
+          {filteredRegistrations.length !== 1
+            ? "s"
+            : ""}{" "}
+          found
+        </Text>
+      )}
 
-      {/* LIST */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator
-            size="large"
-            color="#6C63FF"
+      {/* Empty State */}
+      {registrations.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons
+            name="ticket-outline"
+            size={75}
+            color="#aaa"
           />
 
-          <Text style={styles.loadingText}>
-            Loading registrations...
+          <Text style={styles.emptyTitle}>
+            No Registrations
+          </Text>
+
+          <Text style={styles.emptyText}>
+            You have not registered for any events yet.
+          </Text>
+
+          <TouchableOpacity
+            style={styles.browseButton}
+            onPress={() => navigation.navigate("Events")}
+          >
+            <Text style={styles.browseText}>
+              Browse Events
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : filteredRegistrations.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons
+            name="search-outline"
+            size={60}
+            color="#aaa"
+          />
+
+          <Text style={styles.emptyTitle}>
+            No Results
+          </Text>
+
+          <Text style={styles.emptyText}>
+            Try another search or category.
           </Text>
         </View>
       ) : (
         <FlatList
           data={filteredRegistrations}
-          keyExtractor={(item, index) =>
-            item.registrationId ||
-            `${item.id}-${index}`
-          }
+          keyExtractor={(item) => item.id}
           renderItem={renderRegistration}
-          contentContainerStyle={[
-            styles.listContent,
-            filteredRegistrations.length === 0 &&
-              styles.emptyList,
-          ]}
-          ListEmptyComponent={<EmptyState />}
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.list}
         />
       )}
 
-      {/* DETAILS MODAL */}
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={closeModal}
-      >
-        <View style={styles.modalBackground}>
-
-          <View style={styles.modalContainer}>
-
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                Registration Details
-              </Text>
-
-              <TouchableOpacity
-                onPress={closeModal}
-              >
-                <Ionicons
-                  name="close"
-                  size={27}
-                  color="#555"
-                />
-              </TouchableOpacity>
-            </View>
-
-            {selectedEvent && (
-              <>
-                <View style={styles.modalIcon}>
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={45}
-                    color={
-                      selectedEvent.status ===
-                      "Cancelled"
-                        ? "#D64545"
-                        : "#249653"
-                    }
-                  />
-                </View>
-
-                <Text style={styles.modalEventTitle}>
-                  {selectedEvent.title}
-                </Text>
-
-                <View
-                  style={[
-                    styles.modalStatus,
-                    selectedEvent.status ===
-                      "Cancelled" &&
-                      styles.modalCancelled,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.modalStatusText,
-                      selectedEvent.status ===
-                        "Cancelled" &&
-                        styles.modalCancelledText,
-                    ]}
-                  >
-                    {selectedEvent.status ===
-                    "Cancelled"
-                      ? "Registration Cancelled"
-                      : "Registration Confirmed"}
-                  </Text>
-                </View>
-
-                <View style={styles.modalInfoRow}>
-                  <Ionicons
-                    name="id-card-outline"
-                    size={21}
-                    color="#6C63FF"
-                  />
-
-                  <View>
-                    <Text style={styles.modalLabel}>
-                      Registration ID
-                    </Text>
-
-                    <Text style={styles.modalValue}>
-                      {selectedEvent.registrationId ||
-                        "REG001"}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.modalInfoRow}>
-                  <Ionicons
-                    name="calendar-outline"
-                    size={21}
-                    color="#6C63FF"
-                  />
-
-                  <View>
-                    <Text style={styles.modalLabel}>
-                      Date
-                    </Text>
-
-                    <Text style={styles.modalValue}>
-                      {selectedEvent.date}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.modalInfoRow}>
-                  <Ionicons
-                    name="time-outline"
-                    size={21}
-                    color="#6C63FF"
-                  />
-
-                  <View>
-                    <Text style={styles.modalLabel}>
-                      Time
-                    </Text>
-
-                    <Text style={styles.modalValue}>
-                      {selectedEvent.time}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.modalInfoRow}>
-                  <Ionicons
-                    name="location-outline"
-                    size={21}
-                    color="#6C63FF"
-                  />
-
-                  <View>
-                    <Text style={styles.modalLabel}>
-                      Venue
-                    </Text>
-
-                    <Text style={styles.modalValue}>
-                      {selectedEvent.venue}
-                    </Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.modalCloseButton}
-                  onPress={closeModal}
-                >
-                  <Text
-                    style={styles.modalCloseText}
-                  >
-                    Close
-                  </Text>
-                </TouchableOpacity>
-              </>
-            )}
-
-          </View>
-        </View>
-      </Modal>
     </View>
   );
-};
-
-export default MyRegistrationsScreen;
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F7F7FB",
+    backgroundColor: "#F5F7FB",
   },
 
   header: {
-    height: 65,
-    backgroundColor: "#6C63FF",
+    backgroundColor: "#2563EB",
+    paddingTop: 55,
+    paddingBottom: 18,
+    paddingHorizontal: 18,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 18,
+  },
+
+  headerCenter: {
+    alignItems: "center",
   },
 
   headerTitle: {
-    color: "white",
-    fontSize: 21,
+    color: "#fff",
+    fontSize: 20,
     fontWeight: "bold",
   },
 
-  countBadge: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  countText: {
-    color: "#6C63FF",
-    fontSize: 15,
-    fontWeight: "bold",
-    marginLeft: 5,
-  },
-
-  summaryCard: {
-    backgroundColor: "white",
-    margin: 15,
-    borderRadius: 15,
-    paddingVertical: 15,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    elevation: 2,
-  },
-
-  summaryItem: {
-    alignItems: "center",
-    flex: 1,
-  },
-
-  summaryNumber: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#6C63FF",
-  },
-
-  summaryLabel: {
-    color: "#777",
-    fontSize: 12,
+  headerSubtitle: {
+    color: "#DCE7FF",
+    fontSize: 13,
     marginTop: 3,
   },
 
-  divider: {
-    width: 1,
-    backgroundColor: "#eee",
-  },
-
   searchBox: {
-    backgroundColor: "white",
+    backgroundColor: "#fff",
     marginHorizontal: 15,
-    height: 48,
+    marginTop: 15,
+    height: 50,
     borderRadius: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: 15,
     flexDirection: "row",
     alignItems: "center",
-    elevation: 1,
+    elevation: 2,
   },
 
   searchInput: {
     flex: 1,
-    marginLeft: 9,
+    marginLeft: 10,
     fontSize: 15,
   },
 
-  filterContainer: {
-    flexDirection: "row",
+  categoryList: {
     paddingHorizontal: 15,
     paddingVertical: 12,
   },
 
   filterButton: {
-    backgroundColor: "white",
+    backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#ddd",
     borderRadius: 20,
-    paddingHorizontal: 14,
+    paddingHorizontal: 17,
     paddingVertical: 8,
     marginRight: 8,
   },
 
-  selectedFilter: {
-    backgroundColor: "#6C63FF",
-    borderColor: "#6C63FF",
+  activeFilter: {
+    backgroundColor: "#2563EB",
+    borderColor: "#2563EB",
   },
 
   filterText: {
     color: "#555",
-    fontWeight: "600",
-    fontSize: 13,
+    fontSize: 14,
   },
 
-  selectedFilterText: {
-    color: "white",
+  activeFilterText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 
-  listContent: {
+  resultText: {
+    marginHorizontal: 18,
+    marginBottom: 8,
+    color: "#666",
+    fontSize: 14,
+  },
+
+  list: {
     paddingHorizontal: 15,
     paddingBottom: 30,
   },
 
-  emptyList: {
-    flexGrow: 1,
-  },
-
   card: {
-    backgroundColor: "white",
-    borderRadius: 16,
+    backgroundColor: "#fff",
+    borderRadius: 15,
     padding: 16,
     marginBottom: 14,
-    elevation: 2,
+    elevation: 3,
   },
 
-  cardTop: {
+  topRow: {
     flexDirection: "row",
     alignItems: "center",
   },
 
   iconBox: {
-    width: 55,
-    height: 55,
+    width: 50,
+    height: 50,
     borderRadius: 13,
-    backgroundColor: "#EEEEFF",
+    backgroundColor: "#E8F0FF",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -856,249 +514,132 @@ const styles = StyleSheet.create({
     color: "#222",
   },
 
-  registrationId: {
-    color: "#888",
-    fontSize: 12,
-    marginTop: 4,
+  categoryBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#E8F0FF",
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 7,
+    marginTop: 5,
+  },
+
+  categoryText: {
+    color: "#2563EB",
+    fontSize: 11,
+    fontWeight: "bold",
   },
 
   statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#EAF8EF",
+    backgroundColor: "#E8F7EE",
     paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-
-  cancelledBadge: {
-    backgroundColor: "#FDECEC",
+    paddingVertical: 5,
+    borderRadius: 8,
   },
 
   statusText: {
-    color: "#249653",
+    color: "#16A34A",
     fontSize: 11,
     fontWeight: "bold",
-    marginLeft: 3,
   },
 
-  cancelledText: {
-    color: "#D64545",
-  },
-
-  category: {
-    color: "#6C63FF",
-    fontWeight: "600",
-    marginTop: 10,
-    marginBottom: 7,
+  infoContainer: {
+    marginTop: 15,
+    backgroundColor: "#F8FAFC",
+    padding: 12,
+    borderRadius: 10,
   },
 
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 6,
+    marginVertical: 4,
   },
 
   infoText: {
+    marginLeft: 9,
     color: "#555",
-    marginLeft: 8,
     fontSize: 14,
   },
 
-  buttonRow: {
-    flexDirection: "row",
-    marginTop: 15,
-    gap: 10,
-  },
-
-  detailsButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#6C63FF",
-    borderRadius: 11,
-    paddingVertical: 11,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-  },
-
-  detailsText: {
-    color: "#6C63FF",
-    fontWeight: "bold",
-    marginLeft: 6,
-  },
-
-  cancelButton: {
-    flex: 0.65,
-    backgroundColor: "#E94B3C",
-    borderRadius: 11,
-    paddingVertical: 11,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-  },
-
-  cancelText: {
-    color: "white",
-    fontWeight: "bold",
-    marginLeft: 5,
-  },
-
-  emptyContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 80,
-  },
-
-  emptyIcon: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: "#EEEEFF",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  emptyTitle: {
-    fontSize: 21,
-    fontWeight: "bold",
-    color: "#222",
-    marginTop: 18,
-  },
-
-  emptyText: {
-    color: "#777",
-    fontSize: 15,
-    marginTop: 7,
-    textAlign: "center",
-  },
-
-  browseButton: {
-    backgroundColor: "#6C63FF",
-    paddingHorizontal: 22,
-    paddingVertical: 13,
-    borderRadius: 12,
-    marginTop: 20,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  browseButtonText: {
-    color: "white",
-    fontWeight: "bold",
-    marginLeft: 7,
-    fontSize: 15,
-  },
-
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  loadingText: {
-    color: "#777",
-    marginTop: 10,
-  },
-
-  modalBackground: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-
-  modalContainer: {
-    width: "100%",
-    maxWidth: 500,
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 22,
-  },
-
-  modalHeader: {
+  registrationBox: {
+    backgroundColor: "#F0FDF4",
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 12,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
 
-  modalTitle: {
-    fontSize: 20,
+  registrationLabel: {
+    color: "#666",
+    fontSize: 11,
+  },
+
+  registrationId: {
+    color: "#166534",
+    fontSize: 14,
     fontWeight: "bold",
-    color: "#222",
+    marginTop: 3,
   },
 
-  modalIcon: {
-    width: 75,
-    height: 75,
-    borderRadius: 40,
-    backgroundColor: "#EAF8EF",
-    justifyContent: "center",
-    alignItems: "center",
-    alignSelf: "center",
-    marginVertical: 15,
-  },
-
-  modalEventTitle: {
-    fontSize: 21,
-    fontWeight: "bold",
-    textAlign: "center",
-    color: "#222",
-  },
-
-  modalStatus: {
-    alignSelf: "center",
-    backgroundColor: "#EAF8EF",
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 15,
-    marginTop: 8,
-    marginBottom: 15,
-  },
-
-  modalCancelled: {
-    backgroundColor: "#FDECEC",
-  },
-
-  modalStatusText: {
-    color: "#249653",
-    fontWeight: "bold",
-  },
-
-  modalCancelledText: {
-    color: "#D64545",
-  },
-
-  modalInfoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 8,
-  },
-
-  modalLabel: {
+  registeredDate: {
     color: "#888",
     fontSize: 12,
-    marginLeft: 12,
+    marginTop: 9,
   },
 
-  modalValue: {
-    color: "#333",
-    fontSize: 15,
-    fontWeight: "600",
-    marginLeft: 12,
-  },
-
-  modalCloseButton: {
-    backgroundColor: "#6C63FF",
-    borderRadius: 12,
-    paddingVertical: 13,
+  cancelButton: {
+    height: 45,
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
+    borderRadius: 10,
+    marginTop: 13,
+    justifyContent: "center",
     alignItems: "center",
-    marginTop: 18,
+    flexDirection: "row",
+    backgroundColor: "#FFF",
   },
 
-  modalCloseText: {
-    color: "white",
+  cancelText: {
+    color: "#DC2626",
+    fontSize: 14,
+    fontWeight: "bold",
+    marginLeft: 7,
+  },
+
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 30,
+    paddingBottom: 80,
+  },
+
+  emptyTitle: {
+    fontSize: 21,
+    fontWeight: "bold",
+    color: "#444",
+    marginTop: 15,
+  },
+
+  emptyText: {
+    color: "#777",
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: 7,
+  },
+
+  browseButton: {
+    backgroundColor: "#2563EB",
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginTop: 20,
+  },
+
+  browseText: {
+    color: "#fff",
     fontWeight: "bold",
     fontSize: 15,
   },
