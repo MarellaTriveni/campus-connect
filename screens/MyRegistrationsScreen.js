@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  TextInput,
   Alert,
+  TextInput,
+  Modal,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 
 const STORAGE_KEY = "my_registrations";
 
@@ -24,23 +26,16 @@ const categories = [
 export default function MyRegistrationsScreen({ navigation }) {
   const [registrations, setRegistrations] = useState([]);
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] =
-    useState("All");
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", () => {
-      loadRegistrations();
-    });
-
-    return unsubscribe;
-  }, [navigation]);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedRegistration, setSelectedRegistration] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const loadRegistrations = async () => {
     try {
-      const data = await AsyncStorage.getItem(STORAGE_KEY);
+      const stored = await AsyncStorage.getItem(STORAGE_KEY);
 
-      if (data) {
-        setRegistrations(JSON.parse(data));
+      if (stored) {
+        setRegistrations(JSON.parse(stored));
       } else {
         setRegistrations([]);
       }
@@ -49,7 +44,13 @@ export default function MyRegistrationsScreen({ navigation }) {
     }
   };
 
-  const cancelRegistration = (registrationId) => {
+  useFocusEffect(
+    useCallback(() => {
+      loadRegistrations();
+    }, [])
+  );
+
+  const cancelRegistration = (id) => {
     Alert.alert(
       "Cancel Registration",
       "Are you sure you want to cancel this registration?",
@@ -64,25 +65,23 @@ export default function MyRegistrationsScreen({ navigation }) {
           onPress: async () => {
             try {
               const updated = registrations.filter(
-                (item) => item.id !== registrationId
+                (item) => item.id !== id
               );
-
-              setRegistrations(updated);
 
               await AsyncStorage.setItem(
                 STORAGE_KEY,
                 JSON.stringify(updated)
               );
 
+              setRegistrations(updated);
+              setModalVisible(false);
+
               Alert.alert(
-                "Cancelled",
-                "Registration cancelled successfully."
+                "Registration Cancelled",
+                "Your registration has been cancelled successfully."
               );
             } catch (error) {
-              console.log(
-                "Error cancelling registration:",
-                error
-              );
+              console.log("Cancel error:", error);
             }
           },
         },
@@ -90,301 +89,293 @@ export default function MyRegistrationsScreen({ navigation }) {
     );
   };
 
-  const filteredRegistrations = registrations.filter(
-    (item) => {
-      const searchText = search.toLowerCase();
+  const openDetails = (item) => {
+    setSelectedRegistration(item);
+    setModalVisible(true);
+  };
 
-      const matchesSearch =
-        item.eventName
-          ?.toLowerCase()
-          .includes(searchText) ||
-        item.category
-          ?.toLowerCase()
-          .includes(searchText) ||
-        item.venue
-          ?.toLowerCase()
-          .includes(searchText) ||
-        item.id
-          ?.toLowerCase()
-          .includes(searchText);
+  const filteredRegistrations = registrations.filter((item) => {
+    const matchesSearch =
+      item.eventName?.toLowerCase().includes(search.toLowerCase()) ||
+      item.category?.toLowerCase().includes(search.toLowerCase()) ||
+      item.venue?.toLowerCase().includes(search.toLowerCase());
 
-      const matchesCategory =
-        selectedCategory === "All" ||
-        item.category === selectedCategory;
+    const matchesCategory =
+      selectedCategory === "All" ||
+      item.category === selectedCategory;
 
-      return matchesSearch && matchesCategory;
-    }
-  );
+    return matchesSearch && matchesCategory;
+  });
 
-  const renderRegistration = ({ item }) => {
-    return (
-      <View style={styles.card}>
-
-        {/* Header */}
-        <View style={styles.topRow}>
-          <View style={styles.iconBox}>
-            <Ionicons
-              name="ticket-outline"
-              size={27}
-              color="#2563EB"
-            />
-          </View>
-
-          <View style={styles.titleContainer}>
-            <Text style={styles.eventTitle}>
-              {item.eventName}
-            </Text>
-
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>
-                {item.category}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>
-              Registered
-            </Text>
-          </View>
+  const renderRegistration = ({ item }) => (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <View style={styles.iconBox}>
+          <Ionicons name="calendar" size={24} color="#2563EB" />
         </View>
 
-        {/* Event Details */}
-        <View style={styles.infoContainer}>
+        <View style={styles.titleContainer}>
+          <Text style={styles.eventName}>{item.eventName}</Text>
 
-          <View style={styles.infoRow}>
-            <Ionicons
-              name="calendar-outline"
-              size={19}
-              color="#2563EB"
-            />
-
-            <Text style={styles.infoText}>
-              {item.date}
-            </Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Ionicons
-              name="time-outline"
-              size={19}
-              color="#2563EB"
-            />
-
-            <Text style={styles.infoText}>
-              {item.time}
-            </Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Ionicons
-              name="location-outline"
-              size={19}
-              color="#2563EB"
-            />
-
-            <Text style={styles.infoText}>
-              {item.venue}
-            </Text>
-          </View>
-
-        </View>
-
-        {/* Registration ID */}
-        <View style={styles.registrationBox}>
-          <View>
-            <Text style={styles.registrationLabel}>
-              Registration ID
-            </Text>
-
-            <Text style={styles.registrationId}>
-              {item.id}
-            </Text>
-          </View>
-
-          <Ionicons
-            name="checkmark-circle"
-            size={25}
-            color="#16A34A"
-          />
-        </View>
-
-        {/* Registration Date */}
-        {item.registrationDate && (
-          <Text style={styles.registeredDate}>
-            Registered on: {item.registrationDate}
+          <Text style={styles.category}>
+            {item.category || "General"}
           </Text>
-        )}
+        </View>
 
-        {/* Cancel */}
+        <View style={styles.statusBadge}>
+          <Text style={styles.statusText}>REGISTERED</Text>
+        </View>
+      </View>
+
+      <View style={styles.infoRow}>
+        <Ionicons name="calendar-outline" size={18} color="#555" />
+        <Text style={styles.infoText}>{item.date}</Text>
+      </View>
+
+      <View style={styles.infoRow}>
+        <Ionicons name="time-outline" size={18} color="#555" />
+        <Text style={styles.infoText}>{item.time}</Text>
+      </View>
+
+      <View style={styles.infoRow}>
+        <Ionicons name="location-outline" size={18} color="#555" />
+        <Text style={styles.infoText}>{item.venue}</Text>
+      </View>
+
+      <View style={styles.divider} />
+
+      <Text style={styles.registrationId}>
+        Registration ID: {item.id}
+      </Text>
+
+      <View style={styles.buttons}>
         <TouchableOpacity
-          style={styles.cancelButton}
-          onPress={() =>
-            cancelRegistration(item.id)
-          }
+          style={styles.detailsButton}
+          onPress={() => openDetails(item)}
         >
-          <Ionicons
-            name="close-circle-outline"
-            size={20}
-            color="#DC2626"
-          />
-
-          <Text style={styles.cancelText}>
-            Cancel Registration
-          </Text>
+          <Ionicons name="eye-outline" size={18} color="#2563EB" />
+          <Text style={styles.detailsText}>View Details</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={() => cancelRegistration(item.id)}
+        >
+          <Ionicons name="close-circle-outline" size={18} color="#DC2626" />
+          <Text style={styles.cancelText}>Cancel</Text>
+        </TouchableOpacity>
       </View>
-    );
-  };
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons
-            name="arrow-back"
-            size={27}
-            color="#fff"
-          />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={25} color="#fff" />
         </TouchableOpacity>
 
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>
-            My Registrations
+        <Text style={styles.headerTitle}>My Registrations</Text>
+
+        <Ionicons name="ticket-outline" size={25} color="#fff" />
+      </View>
+
+      {/* Summary */}
+      <View style={styles.summaryCard}>
+        <View>
+          <Text style={styles.summaryTitle}>
+            Total Registrations
           </Text>
 
-          <Text style={styles.headerSubtitle}>
-            {registrations.length} registration
-            {registrations.length !== 1 ? "s" : ""}
+          <Text style={styles.summaryCount}>
+            {registrations.length}
           </Text>
         </View>
 
-        <Ionicons
-          name="ticket"
-          size={27}
-          color="#fff"
-        />
+        <View style={styles.summaryIcon}>
+          <Ionicons name="checkmark-circle" size={42} color="#16A34A" />
+        </View>
       </View>
 
       {/* Search */}
-      {registrations.length > 0 && (
-        <View style={styles.searchBox}>
-          <Ionicons
-            name="search-outline"
-            size={21}
-            color="#777"
-          />
+      <View style={styles.searchBox}>
+        <Ionicons name="search-outline" size={20} color="#777" />
 
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search registrations..."
-            value={search}
-            onChangeText={setSearch}
-          />
-        </View>
-      )}
+        <TextInput
+          placeholder="Search registrations..."
+          value={search}
+          onChangeText={setSearch}
+          style={styles.searchInput}
+        />
+      </View>
 
       {/* Categories */}
-      {registrations.length > 0 && (
-        <FlatList
-          data={categories}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(item) => item}
-          contentContainerStyle={styles.categoryList}
-          renderItem={({ item }) => (
-            <TouchableOpacity
+      <FlatList
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        data={categories}
+        keyExtractor={(item) => item}
+        contentContainerStyle={styles.categoryList}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={[
+              styles.categoryButton,
+              selectedCategory === item &&
+                styles.categoryButtonActive,
+            ]}
+            onPress={() => setSelectedCategory(item)}
+          >
+            <Text
               style={[
-                styles.filterButton,
+                styles.categoryButtonText,
                 selectedCategory === item &&
-                  styles.activeFilter,
+                  styles.categoryButtonTextActive,
               ]}
-              onPress={() =>
-                setSelectedCategory(item)
-              }
             >
-              <Text
-                style={[
-                  styles.filterText,
-                  selectedCategory === item &&
-                    styles.activeFilterText,
-                ]}
-              >
-                {item}
-              </Text>
-            </TouchableOpacity>
-          )}
-        />
-      )}
+              {item}
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
 
-      {/* Count */}
-      {registrations.length > 0 && (
-        <Text style={styles.resultText}>
-          {filteredRegistrations.length} registration
-          {filteredRegistrations.length !== 1
-            ? "s"
-            : ""}{" "}
-          found
-        </Text>
-      )}
-
-      {/* Empty State */}
-      {registrations.length === 0 ? (
+      {/* Registration List */}
+      {filteredRegistrations.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons
-            name="ticket-outline"
-            size={75}
-            color="#aaa"
+            name="document-text-outline"
+            size={70}
+            color="#CBD5E1"
           />
 
           <Text style={styles.emptyTitle}>
-            No Registrations
+            No Registrations Found
           </Text>
 
           <Text style={styles.emptyText}>
-            You have not registered for any events yet.
+            Register for an event to see your registrations here.
           </Text>
 
           <TouchableOpacity
             style={styles.browseButton}
             onPress={() => navigation.navigate("Events")}
           >
-            <Text style={styles.browseText}>
-              Browse Events
-            </Text>
+            <Text style={styles.browseText}>Browse Events</Text>
           </TouchableOpacity>
-        </View>
-      ) : filteredRegistrations.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons
-            name="search-outline"
-            size={60}
-            color="#aaa"
-          />
-
-          <Text style={styles.emptyTitle}>
-            No Results
-          </Text>
-
-          <Text style={styles.emptyText}>
-            Try another search or category.
-          </Text>
         </View>
       ) : (
         <FlatList
           data={filteredRegistrations}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => String(item.id)}
           renderItem={renderRegistration}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
         />
       )}
 
+      {/* Details Modal */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                Registration Details
+              </Text>
+
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+              >
+                <Ionicons
+                  name="close"
+                  size={26}
+                  color="#333"
+                />
+              </TouchableOpacity>
+            </View>
+
+            {selectedRegistration && (
+              <>
+                <View style={styles.modalIcon}>
+                  <Ionicons
+                    name="ticket"
+                    size={35}
+                    color="#2563EB"
+                  />
+                </View>
+
+                <Text style={styles.modalEventName}>
+                  {selectedRegistration.eventName}
+                </Text>
+
+                <View style={styles.detailBox}>
+                  <Text style={styles.detailLabel}>
+                    Registration ID
+                  </Text>
+                  <Text style={styles.detailValue}>
+                    {selectedRegistration.id}
+                  </Text>
+                </View>
+
+                <View style={styles.detailBox}>
+                  <Text style={styles.detailLabel}>
+                    Category
+                  </Text>
+                  <Text style={styles.detailValue}>
+                    {selectedRegistration.category}
+                  </Text>
+                </View>
+
+                <View style={styles.detailBox}>
+                  <Text style={styles.detailLabel}>
+                    Date & Time
+                  </Text>
+                  <Text style={styles.detailValue}>
+                    {selectedRegistration.date} •{" "}
+                    {selectedRegistration.time}
+                  </Text>
+                </View>
+
+                <View style={styles.detailBox}>
+                  <Text style={styles.detailLabel}>
+                    Venue
+                  </Text>
+                  <Text style={styles.detailValue}>
+                    {selectedRegistration.venue}
+                  </Text>
+                </View>
+
+                <View style={styles.confirmedBox}>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={22}
+                    color="#16A34A"
+                  />
+
+                  <Text style={styles.confirmedText}>
+                    Registration Confirmed
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.modalCancelButton}
+                  onPress={() =>
+                    cancelRegistration(selectedRegistration.id)
+                  }
+                >
+                  <Text style={styles.modalCancelText}>
+                    Cancel Registration
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -392,21 +383,17 @@ export default function MyRegistrationsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F7FB",
+    backgroundColor: "#F8FAFC",
   },
 
   header: {
     backgroundColor: "#2563EB",
-    paddingTop: 55,
+    paddingTop: 45,
     paddingBottom: 18,
     paddingHorizontal: 18,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-  },
-
-  headerCenter: {
-    alignItems: "center",
   },
 
   headerTitle: {
@@ -415,19 +402,40 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
-  headerSubtitle: {
-    color: "#DCE7FF",
-    fontSize: 13,
-    marginTop: 3,
+  summaryCard: {
+    margin: 15,
+    padding: 18,
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    elevation: 3,
+  },
+
+  summaryTitle: {
+    fontSize: 14,
+    color: "#64748B",
+  },
+
+  summaryCount: {
+    fontSize: 30,
+    fontWeight: "bold",
+    color: "#2563EB",
+    marginTop: 4,
+  },
+
+  summaryIcon: {
+    backgroundColor: "#F0FDF4",
+    padding: 10,
+    borderRadius: 50,
   },
 
   searchBox: {
-    backgroundColor: "#fff",
     marginHorizontal: 15,
-    marginTop: 15,
-    height: 50,
+    backgroundColor: "#fff",
     borderRadius: 12,
-    paddingHorizontal: 15,
+    paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
     elevation: 2,
@@ -435,7 +443,7 @@ const styles = StyleSheet.create({
 
   searchInput: {
     flex: 1,
-    marginLeft: 10,
+    padding: 12,
     fontSize: 15,
   },
 
@@ -444,36 +452,25 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
 
-  filterButton: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 20,
-    paddingHorizontal: 17,
+  categoryButton: {
+    paddingHorizontal: 16,
     paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "#E2E8F0",
     marginRight: 8,
   },
 
-  activeFilter: {
+  categoryButtonActive: {
     backgroundColor: "#2563EB",
-    borderColor: "#2563EB",
   },
 
-  filterText: {
-    color: "#555",
-    fontSize: 14,
+  categoryButtonText: {
+    color: "#475569",
+    fontWeight: "600",
   },
 
-  activeFilterText: {
+  categoryButtonTextActive: {
     color: "#fff",
-    fontWeight: "bold",
-  },
-
-  resultText: {
-    marginHorizontal: 18,
-    marginBottom: 8,
-    color: "#666",
-    fontSize: 14,
   },
 
   list: {
@@ -483,164 +480,240 @@ const styles = StyleSheet.create({
 
   card: {
     backgroundColor: "#fff",
-    borderRadius: 15,
     padding: 16,
+    borderRadius: 15,
     marginBottom: 14,
     elevation: 3,
   },
 
-  topRow: {
+  cardHeader: {
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 14,
   },
 
   iconBox: {
-    width: 50,
-    height: 50,
-    borderRadius: 13,
-    backgroundColor: "#E8F0FF",
-    justifyContent: "center",
+    width: 45,
+    height: 45,
+    borderRadius: 12,
+    backgroundColor: "#EFF6FF",
     alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
   },
 
   titleContainer: {
     flex: 1,
-    marginLeft: 12,
   },
 
-  eventTitle: {
+  eventName: {
     fontSize: 17,
     fontWeight: "bold",
-    color: "#222",
+    color: "#1E293B",
   },
 
-  categoryBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: "#E8F0FF",
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 7,
-    marginTop: 5,
-  },
-
-  categoryText: {
-    color: "#2563EB",
-    fontSize: 11,
-    fontWeight: "bold",
+  category: {
+    marginTop: 4,
+    color: "#64748B",
+    fontSize: 13,
   },
 
   statusBadge: {
-    backgroundColor: "#E8F7EE",
+    backgroundColor: "#DCFCE7",
     paddingHorizontal: 8,
     paddingVertical: 5,
     borderRadius: 8,
   },
 
   statusText: {
-    color: "#16A34A",
-    fontSize: 11,
+    color: "#15803D",
+    fontSize: 9,
     fontWeight: "bold",
-  },
-
-  infoContainer: {
-    marginTop: 15,
-    backgroundColor: "#F8FAFC",
-    padding: 12,
-    borderRadius: 10,
   },
 
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 4,
+    marginTop: 8,
   },
 
   infoText: {
-    marginLeft: 9,
-    color: "#555",
+    marginLeft: 8,
+    color: "#475569",
     fontSize: 14,
   },
 
-  registrationBox: {
-    backgroundColor: "#F0FDF4",
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  registrationLabel: {
-    color: "#666",
-    fontSize: 11,
+  divider: {
+    height: 1,
+    backgroundColor: "#E2E8F0",
+    marginVertical: 13,
   },
 
   registrationId: {
-    color: "#166534",
-    fontSize: 14,
-    fontWeight: "bold",
-    marginTop: 3,
+    fontSize: 12,
+    color: "#64748B",
   },
 
-  registeredDate: {
-    color: "#888",
-    fontSize: 12,
-    marginTop: 9,
+  buttons: {
+    flexDirection: "row",
+    marginTop: 14,
+    gap: 10,
+  },
+
+  detailsButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#2563EB",
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+  },
+
+  detailsText: {
+    color: "#2563EB",
+    fontWeight: "bold",
+    marginLeft: 5,
   },
 
   cancelButton: {
-    height: 45,
+    flex: 1,
     borderWidth: 1,
     borderColor: "#FCA5A5",
     borderRadius: 10,
-    marginTop: 13,
-    justifyContent: "center",
+    paddingVertical: 10,
     alignItems: "center",
+    justifyContent: "center",
     flexDirection: "row",
-    backgroundColor: "#FFF",
   },
 
   cancelText: {
     color: "#DC2626",
-    fontSize: 14,
     fontWeight: "bold",
-    marginLeft: 7,
+    marginLeft: 5,
   },
 
   emptyContainer: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 30,
-    paddingBottom: 80,
+    justifyContent: "center",
+    padding: 30,
   },
 
   emptyTitle: {
-    fontSize: 21,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#444",
+    color: "#334155",
     marginTop: 15,
   },
 
   emptyText: {
-    color: "#777",
-    fontSize: 14,
     textAlign: "center",
-    marginTop: 7,
+    color: "#64748B",
+    marginTop: 8,
+    lineHeight: 21,
   },
 
   browseButton: {
+    marginTop: 18,
     backgroundColor: "#2563EB",
     paddingHorizontal: 22,
     paddingVertical: 12,
     borderRadius: 10,
-    marginTop: 20,
   },
 
   browseText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+
+  modalContainer: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    padding: 20,
+    paddingBottom: 30,
+  },
+
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  modalTitle: {
+    fontSize: 21,
+    fontWeight: "bold",
+    color: "#1E293B",
+  },
+
+  modalIcon: {
+    alignSelf: "center",
+    backgroundColor: "#EFF6FF",
+    padding: 15,
+    borderRadius: 50,
+    marginTop: 18,
+  },
+
+  modalEventName: {
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1E293B",
+    marginVertical: 15,
+  },
+
+  detailBox: {
+    backgroundColor: "#F8FAFC",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 8,
+  },
+
+  detailLabel: {
+    color: "#64748B",
+    fontSize: 12,
+  },
+
+  detailValue: {
+    color: "#1E293B",
     fontSize: 15,
+    fontWeight: "600",
+    marginTop: 3,
+  },
+
+  confirmedBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F0FDF4",
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 5,
+  },
+
+  confirmedText: {
+    color: "#15803D",
+    fontWeight: "bold",
+    marginLeft: 8,
+  },
+
+  modalCancelButton: {
+    backgroundColor: "#FEE2E2",
+    paddingVertical: 13,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 15,
+  },
+
+  modalCancelText: {
+    color: "#DC2626",
+    fontWeight: "bold",
   },
 });
