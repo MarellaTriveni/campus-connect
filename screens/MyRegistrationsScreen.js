@@ -26,17 +26,22 @@ const categories = [
 export default function MyRegistrationsScreen({ navigation }) {
   const [registrations, setRegistrations] = useState([]);
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] =
+    useState("All");
 
   const [selectedRegistration, setSelectedRegistration] =
     useState(null);
 
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Load registrations
+  // ==============================
+  // LOAD REGISTRATIONS
+  // ==============================
+
   const loadRegistrations = async () => {
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
+      const stored =
+        await AsyncStorage.getItem(STORAGE_KEY);
 
       if (stored) {
         setRegistrations(JSON.parse(stored));
@@ -44,7 +49,10 @@ export default function MyRegistrationsScreen({ navigation }) {
         setRegistrations([]);
       }
     } catch (error) {
-      console.log("Error loading registrations:", error);
+      console.log(
+        "Error loading registrations:",
+        error
+      );
     }
   };
 
@@ -55,7 +63,10 @@ export default function MyRegistrationsScreen({ navigation }) {
     }, [])
   );
 
-  // Cancel registration
+  // ==============================
+  // CANCEL REGISTRATION
+  // ==============================
+
   const cancelRegistration = (id) => {
     Alert.alert(
       "Cancel Registration",
@@ -68,11 +79,13 @@ export default function MyRegistrationsScreen({ navigation }) {
         {
           text: "Yes, Cancel",
           style: "destructive",
+
           onPress: async () => {
             try {
-              const updated = registrations.filter(
-                (item) => item.id !== id
-              );
+              const updated =
+                registrations.filter(
+                  (item) => item.id !== id
+                );
 
               await AsyncStorage.setItem(
                 STORAGE_KEY,
@@ -88,7 +101,10 @@ export default function MyRegistrationsScreen({ navigation }) {
                 "Your registration has been cancelled successfully."
               );
             } catch (error) {
-              console.log("Cancel error:", error);
+              console.log(
+                "Cancel registration error:",
+                error
+              );
             }
           },
         },
@@ -96,33 +112,53 @@ export default function MyRegistrationsScreen({ navigation }) {
     );
   };
 
-  // Open registration details
+  // ==============================
+  // OPEN DETAILS
+  // ==============================
+
   const openDetails = (item) => {
     setSelectedRegistration(item);
     setModalVisible(true);
   };
 
-  // Filter registrations
-  const filteredRegistrations = registrations.filter((item) => {
-    const searchText = search.toLowerCase();
+  // ==============================
+  // FILTER REGISTRATIONS
+  // ==============================
 
-    const matchesSearch =
-      item.eventName?.toLowerCase().includes(searchText) ||
-      item.category?.toLowerCase().includes(searchText) ||
-      item.venue?.toLowerCase().includes(searchText);
+  const filteredRegistrations =
+    registrations.filter((item) => {
+      const searchText = search.toLowerCase();
 
-    const matchesCategory =
-      selectedCategory === "All" ||
-      item.category === selectedCategory;
+      const matchesSearch =
+        item.eventName
+          ?.toLowerCase()
+          .includes(searchText) ||
+        item.category
+          ?.toLowerCase()
+          .includes(searchText) ||
+        item.venue
+          ?.toLowerCase()
+          .includes(searchText);
 
-    return matchesSearch && matchesCategory;
-  });
+      const matchesCategory =
+        selectedCategory === "All" ||
+        item.category === selectedCategory;
 
-  // Registration card
+      return (
+        matchesSearch && matchesCategory
+      );
+    });
+
+  // ==============================
+  // REGISTRATION CARD
+  // ==============================
+
   const renderRegistration = ({ item }) => (
     <View style={styles.card}>
-      {/* Card Header */}
+
+      {/* CARD HEADER */}
       <View style={styles.cardHeader}>
+
         <View style={styles.iconBox}>
           <Ionicons
             name="calendar"
@@ -146,9 +182,10 @@ export default function MyRegistrationsScreen({ navigation }) {
             REGISTERED
           </Text>
         </View>
+
       </View>
 
-      {/* Date */}
+      {/* DATE */}
       <View style={styles.infoRow}>
         <Ionicons
           name="calendar-outline"
@@ -161,7 +198,7 @@ export default function MyRegistrationsScreen({ navigation }) {
         </Text>
       </View>
 
-      {/* Time */}
+      {/* TIME */}
       <View style={styles.infoRow}>
         <Ionicons
           name="time-outline"
@@ -174,7 +211,7 @@ export default function MyRegistrationsScreen({ navigation }) {
         </Text>
       </View>
 
-      {/* Venue */}
+      {/* VENUE */}
       <View style={styles.infoRow}>
         <Ionicons
           name="location-outline"
@@ -189,14 +226,15 @@ export default function MyRegistrationsScreen({ navigation }) {
 
       <View style={styles.divider} />
 
-      {/* Registration ID */}
+      {/* REGISTRATION ID */}
       <Text style={styles.registrationId}>
         Registration ID: {item.id}
       </Text>
 
-      {/* Buttons */}
+      {/* FIRST ROW BUTTONS */}
       <View style={styles.buttons}>
-        {/* View Details */}
+
+        {/* VIEW DETAILS */}
         <TouchableOpacity
           style={styles.detailsButton}
           onPress={() => openDetails(item)}
@@ -212,10 +250,12 @@ export default function MyRegistrationsScreen({ navigation }) {
           </Text>
         </TouchableOpacity>
 
-        {/* Cancel */}
+        {/* CANCEL */}
         <TouchableOpacity
           style={styles.cancelButton}
-          onPress={() => cancelRegistration(item.id)}
+          onPress={() =>
+            cancelRegistration(item.id)
+          }
         >
           <Ionicons
             name="close-circle-outline"
@@ -227,15 +267,19 @@ export default function MyRegistrationsScreen({ navigation }) {
             Cancel
           </Text>
         </TouchableOpacity>
+
       </View>
 
-      {/* DAY 46 - Feedback Button */}
+      {/* DAY 46 - FEEDBACK */}
       <TouchableOpacity
         style={styles.feedbackButton}
         onPress={() =>
-          navigation.navigate("EventFeedback", {
-            event: item,
-          })
+          navigation.navigate(
+            "EventFeedback",
+            {
+              event: item,
+            }
+          )
         }
       >
         <Ionicons
@@ -248,14 +292,20 @@ export default function MyRegistrationsScreen({ navigation }) {
           Give Event Feedback
         </Text>
       </TouchableOpacity>
+
     </View>
   );
+
+  // ==============================
+  // MAIN UI
+  // ==============================
 
   return (
     <View style={styles.container}>
 
-      {/* Header */}
+      {/* HEADER */}
       <View style={styles.header}>
+
         <TouchableOpacity
           onPress={() => navigation.goBack()}
         >
@@ -275,10 +325,12 @@ export default function MyRegistrationsScreen({ navigation }) {
           size={25}
           color="#fff"
         />
+
       </View>
 
-      {/* Summary Card */}
+      {/* SUMMARY CARD */}
       <View style={styles.summaryCard}>
+
         <View>
           <Text style={styles.summaryTitle}>
             Total Registrations
@@ -296,10 +348,12 @@ export default function MyRegistrationsScreen({ navigation }) {
             color="#16A34A"
           />
         </View>
+
       </View>
 
-      {/* Search */}
+      {/* SEARCH */}
       <View style={styles.searchBox}>
+
         <Ionicons
           name="search-outline"
           size={20}
@@ -313,19 +367,23 @@ export default function MyRegistrationsScreen({ navigation }) {
           onChangeText={setSearch}
           style={styles.searchInput}
         />
+
       </View>
 
-      {/* Categories */}
+      {/* CATEGORY FILTER */}
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
         data={categories}
         keyExtractor={(item) => item}
-        contentContainerStyle={styles.categoryList}
+        contentContainerStyle={
+          styles.categoryList
+        }
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[
               styles.categoryButton,
+
               selectedCategory === item &&
                 styles.categoryButtonActive,
             ]}
@@ -336,6 +394,7 @@ export default function MyRegistrationsScreen({ navigation }) {
             <Text
               style={[
                 styles.categoryButtonText,
+
                 selectedCategory === item &&
                   styles.categoryButtonTextActive,
               ]}
@@ -346,9 +405,11 @@ export default function MyRegistrationsScreen({ navigation }) {
         )}
       />
 
-      {/* Registration List */}
+      {/* REGISTRATION LIST */}
       {filteredRegistrations.length === 0 ? (
+
         <View style={styles.emptyContainer}>
+
           <Ionicons
             name="document-text-outline"
             size={70}
@@ -374,8 +435,11 @@ export default function MyRegistrationsScreen({ navigation }) {
               Browse Events
             </Text>
           </TouchableOpacity>
+
         </View>
+
       ) : (
+
         <FlatList
           data={filteredRegistrations}
           keyExtractor={(item) =>
@@ -385,9 +449,13 @@ export default function MyRegistrationsScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
         />
+
       )}
 
-      {/* Registration Details Modal */}
+      {/* ================================= */}
+      {/* REGISTRATION DETAILS MODAL */}
+      {/* ================================= */}
+
       <Modal
         visible={modalVisible}
         transparent
@@ -396,11 +464,14 @@ export default function MyRegistrationsScreen({ navigation }) {
           setModalVisible(false)
         }
       >
+
         <View style={styles.modalOverlay}>
+
           <View style={styles.modalContainer}>
 
-            {/* Modal Header */}
+            {/* MODAL HEADER */}
             <View style={styles.modalHeader}>
+
               <Text style={styles.modalTitle}>
                 Registration Details
               </Text>
@@ -416,11 +487,13 @@ export default function MyRegistrationsScreen({ navigation }) {
                   color="#333"
                 />
               </TouchableOpacity>
+
             </View>
 
             {selectedRegistration && (
               <>
-                {/* Icon */}
+
+                {/* ICON */}
                 <View style={styles.modalIcon}>
                   <Ionicons
                     name="ticket"
@@ -429,13 +502,16 @@ export default function MyRegistrationsScreen({ navigation }) {
                   />
                 </View>
 
-                {/* Event Name */}
-                <Text style={styles.modalEventName}>
+                {/* EVENT NAME */}
+                <Text
+                  style={styles.modalEventName}
+                >
                   {selectedRegistration.eventName}
                 </Text>
 
-                {/* Registration ID */}
+                {/* REGISTRATION ID */}
                 <View style={styles.detailBox}>
+
                   <Text style={styles.detailLabel}>
                     Registration ID
                   </Text>
@@ -443,21 +519,26 @@ export default function MyRegistrationsScreen({ navigation }) {
                   <Text style={styles.detailValue}>
                     {selectedRegistration.id}
                   </Text>
+
                 </View>
 
-                {/* Category */}
+                {/* CATEGORY */}
                 <View style={styles.detailBox}>
+
                   <Text style={styles.detailLabel}>
                     Category
                   </Text>
 
                   <Text style={styles.detailValue}>
-                    {selectedRegistration.category}
+                    {selectedRegistration.category ||
+                      "General"}
                   </Text>
+
                 </View>
 
-                {/* Date & Time */}
+                {/* DATE & TIME */}
                 <View style={styles.detailBox}>
+
                   <Text style={styles.detailLabel}>
                     Date & Time
                   </Text>
@@ -466,10 +547,12 @@ export default function MyRegistrationsScreen({ navigation }) {
                     {selectedRegistration.date} •{" "}
                     {selectedRegistration.time}
                   </Text>
+
                 </View>
 
-                {/* Venue */}
+                {/* VENUE */}
                 <View style={styles.detailBox}>
+
                   <Text style={styles.detailLabel}>
                     Venue
                   </Text>
@@ -477,50 +560,65 @@ export default function MyRegistrationsScreen({ navigation }) {
                   <Text style={styles.detailValue}>
                     {selectedRegistration.venue}
                   </Text>
+
                 </View>
 
-                {/* Registration Date */}
+                {/* REGISTRATION DATE */}
                 {selectedRegistration.registrationDate && (
                   <View style={styles.detailBox}>
+
                     <Text style={styles.detailLabel}>
                       Registered On
                     </Text>
 
-                    <Text style={styles.detailValue}>
+                    <Text
+                      style={styles.detailValue}
+                    >
                       {
                         selectedRegistration.registrationDate
                       }
                     </Text>
+
                   </View>
                 )}
 
-                {/* Confirmed */}
+                {/* CONFIRMED */}
                 <View style={styles.confirmedBox}>
+
                   <Ionicons
                     name="checkmark-circle"
                     size={22}
                     color="#16A34A"
                   />
 
-                  <Text style={styles.confirmedText}>
+                  <Text
+                    style={styles.confirmedText}
+                  >
                     Registration Confirmed
                   </Text>
+
                 </View>
 
-                {/* Feedback from Modal */}
+                {/* FEEDBACK FROM MODAL */}
                 <TouchableOpacity
-                  style={styles.modalFeedbackButton}
+                  style={
+                    styles.modalFeedbackButton
+                  }
                   onPress={() => {
+
                     setModalVisible(false);
 
                     navigation.navigate(
                       "EventFeedback",
                       {
-                        event: selectedRegistration,
+                        event:
+                          selectedRegistration,
                       }
                     );
+
                   }}
                 >
+
                   <Ionicons
                     name="star-outline"
                     size={20}
@@ -528,39 +626,90 @@ export default function MyRegistrationsScreen({ navigation }) {
                   />
 
                   <Text
-                    style={styles.modalFeedbackText}
+                    style={
+                      styles.modalFeedbackText
+                    }
                   >
                     Give Event Feedback
                   </Text>
+
                 </TouchableOpacity>
 
-                {/* Cancel */}
+                {/* VIEW FEEDBACK SUMMARY */}
                 <TouchableOpacity
-                  style={styles.modalCancelButton}
+                  style={styles.summaryButton}
+                  onPress={() => {
+
+                    setModalVisible(false);
+
+                    navigation.navigate(
+                      "FeedbackSummary"
+                    );
+
+                  }}
+                >
+
+                  <Ionicons
+                    name="stats-chart-outline"
+                    size={20}
+                    color="#2563EB"
+                  />
+
+                  <Text
+                    style={
+                      styles.summaryButtonText
+                    }
+                  >
+                    View Feedback Summary
+                  </Text>
+
+                </TouchableOpacity>
+
+                {/* CANCEL */}
+                <TouchableOpacity
+                  style={
+                    styles.modalCancelButton
+                  }
                   onPress={() =>
                     cancelRegistration(
                       selectedRegistration.id
                     )
                   }
                 >
-                  <Text style={styles.modalCancelText}>
+                  <Text
+                    style={
+                      styles.modalCancelText
+                    }
+                  >
                     Cancel Registration
                   </Text>
                 </TouchableOpacity>
+
               </>
             )}
+
           </View>
+
         </View>
+
       </Modal>
+
     </View>
   );
 }
 
+// ==========================================
+// STYLES
+// ==========================================
+
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
     backgroundColor: "#F8FAFC",
   },
+
+  // HEADER
 
   header: {
     backgroundColor: "#2563EB",
@@ -577,6 +726,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
   },
+
+  // SUMMARY
 
   summaryCard: {
     margin: 15,
@@ -607,6 +758,8 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
 
+  // SEARCH
+
   searchBox: {
     marginHorizontal: 15,
     backgroundColor: "#fff",
@@ -623,6 +776,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#1E293B",
   },
+
+  // CATEGORY
 
   categoryList: {
     paddingHorizontal: 15,
@@ -650,10 +805,14 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
 
+  // LIST
+
   list: {
     paddingHorizontal: 15,
     paddingBottom: 30,
   },
+
+  // CARD
 
   card: {
     backgroundColor: "#fff",
@@ -695,6 +854,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
+  // STATUS
+
   statusBadge: {
     backgroundColor: "#DCFCE7",
     paddingHorizontal: 8,
@@ -707,6 +868,8 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: "bold",
   },
+
+  // INFO
 
   infoRow: {
     flexDirection: "row",
@@ -730,6 +893,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#64748B",
   },
+
+  // BUTTONS
 
   buttons: {
     flexDirection: "row",
@@ -771,7 +936,8 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
 
-  /* DAY 46 FEEDBACK BUTTON */
+  // DAY 46 FEEDBACK
+
   feedbackButton: {
     marginTop: 10,
     borderWidth: 1,
@@ -789,6 +955,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 5,
   },
+
+  // EMPTY
 
   emptyContainer: {
     flex: 1,
@@ -824,7 +992,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
-  /* MODAL */
+  // MODAL
 
   modalOverlay: {
     flex: 1,
@@ -903,7 +1071,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  /* MODAL FEEDBACK */
+  // MODAL FEEDBACK
 
   modalFeedbackButton: {
     backgroundColor: "#FFFBEB",
@@ -922,6 +1090,28 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 7,
   },
+
+  // DAY 47 FEEDBACK SUMMARY
+
+  summaryButton: {
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#93C5FD",
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    marginTop: 10,
+  },
+
+  summaryButtonText: {
+    color: "#2563EB",
+    fontWeight: "bold",
+    marginLeft: 7,
+  },
+
+  // MODAL CANCEL
 
   modalCancelButton: {
     backgroundColor: "#FEE2E2",
