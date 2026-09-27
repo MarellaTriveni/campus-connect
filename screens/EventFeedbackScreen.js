@@ -1,40 +1,47 @@
-import React, { useCallback, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
-  TouchableOpacity,
   TextInput,
+  TouchableOpacity,
+  StyleSheet,
   Alert,
   ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
 
 const FEEDBACK_KEY = "event_feedback";
 
-export default function EventFeedbackScreen({ navigation, route }) {
-  const event = route?.params?.event;
+export default function EventFeedbackScreen({ route, navigation }) {
+  const { event } = route.params || {};
 
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [existingFeedback, setExistingFeedback] = useState(null);
+
+  useEffect(() => {
+    loadFeedback();
+  }, []);
 
   const loadFeedback = async () => {
     try {
       const stored = await AsyncStorage.getItem(FEEDBACK_KEY);
 
-      if (stored && event) {
+      if (stored) {
         const feedbackList = JSON.parse(stored);
 
-        const existing = feedbackList.find(
-          (item) => item.eventId === event.id
+        const found = feedbackList.find(
+          (item) =>
+            item.eventId === event?.id ||
+            item.eventName === event?.eventName
         );
 
-        if (existing) {
-          setRating(existing.rating);
-          setFeedback(existing.feedback);
+        if (found) {
+          setExistingFeedback(found);
+          setRating(found.rating);
+          setFeedback(found.feedback);
           setSubmitted(true);
         }
       }
@@ -43,50 +50,42 @@ export default function EventFeedbackScreen({ navigation, route }) {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      loadFeedback();
-    }, [])
-  );
-
-  const submitFeedback = async () => {
+  const saveFeedback = async () => {
     if (rating === 0) {
-      Alert.alert(
-        "Select Rating",
-        "Please select a rating before submitting."
-      );
+      Alert.alert("Rating Required", "Please select a rating.");
       return;
     }
 
-    if (feedback.trim().length === 0) {
-      Alert.alert(
-        "Enter Feedback",
-        "Please write some feedback."
-      );
+    if (!feedback.trim()) {
+      Alert.alert("Feedback Required", "Please enter your feedback.");
       return;
     }
 
     try {
       const stored = await AsyncStorage.getItem(FEEDBACK_KEY);
+      let feedbackList = stored ? JSON.parse(stored) : [];
 
-      const feedbackList = stored ? JSON.parse(stored) : [];
-
-      const newFeedback = {
-        eventId: event?.id || "unknown",
-        eventName: event?.eventName || "Campus Event",
+      const feedbackData = {
+        id: existingFeedback?.id || Date.now().toString(),
+        eventId: event?.id || event?.eventName,
+        eventName: event?.eventName || "Event",
+        category: event?.category || "General",
         rating: rating,
         feedback: feedback.trim(),
-        date: new Date().toLocaleDateString(),
+        submittedAt:
+          existingFeedback?.submittedAt || new Date().toLocaleString(),
       };
 
       const existingIndex = feedbackList.findIndex(
-        (item) => item.eventId === newFeedback.eventId
+        (item) =>
+          item.eventId === feedbackData.eventId ||
+          item.eventName === feedbackData.eventName
       );
 
       if (existingIndex !== -1) {
-        feedbackList[existingIndex] = newFeedback;
+        feedbackList[existingIndex] = feedbackData;
       } else {
-        feedbackList.push(newFeedback);
+        feedbackList.push(feedbackData);
       }
 
       await AsyncStorage.setItem(
@@ -94,20 +93,67 @@ export default function EventFeedbackScreen({ navigation, route }) {
         JSON.stringify(feedbackList)
       );
 
+      setExistingFeedback(feedbackData);
       setSubmitted(true);
 
       Alert.alert(
-        "Feedback Submitted",
-        "Thank you for sharing your feedback!"
+        existingIndex !== -1 ? "Feedback Updated" : "Thank You!",
+        existingIndex !== -1
+          ? "Your feedback has been updated successfully."
+          : "Your feedback has been submitted successfully."
       );
     } catch (error) {
-      console.log("Feedback error:", error);
-
-      Alert.alert(
-        "Error",
-        "Unable to save feedback."
-      );
+      console.log("Error saving feedback:", error);
+      Alert.alert("Error", "Unable to save feedback.");
     }
+  };
+
+  const deleteFeedback = async () => {
+    Alert.alert(
+      "Delete Feedback",
+      "Are you sure you want to delete your feedback?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const stored = await AsyncStorage.getItem(FEEDBACK_KEY);
+
+              if (!stored) return;
+
+              const feedbackList = JSON.parse(stored);
+
+              const updatedList = feedbackList.filter(
+                (item) =>
+                  item.eventId !== existingFeedback?.eventId
+              );
+
+              await AsyncStorage.setItem(
+                FEEDBACK_KEY,
+                JSON.stringify(updatedList)
+              );
+
+              setRating(0);
+              setFeedback("");
+              setSubmitted(false);
+              setExistingFeedback(null);
+
+              Alert.alert(
+                "Deleted",
+                "Your feedback has been deleted."
+              );
+            } catch (error) {
+              console.log("Delete error:", error);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const renderStars = () => {
@@ -116,15 +162,11 @@ export default function EventFeedbackScreen({ navigation, route }) {
         {[1, 2, 3, 4, 5].map((star) => (
           <TouchableOpacity
             key={star}
-            onPress={() => {
-              setRating(star);
-              setSubmitted(false);
-            }}
+            onPress={() => setRating(star)}
           >
             <Ionicons
               name={star <= rating ? "star" : "star-outline"}
               size={42}
-              color="#F59E0B"
               style={styles.star}
             />
           </TouchableOpacity>
@@ -134,303 +176,330 @@ export default function EventFeedbackScreen({ navigation, route }) {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+    >
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
+          style={styles.backButton}
         >
-          <Ionicons
-            name="arrow-back"
-            size={26}
-            color="#fff"
-          />
+          <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>
-          Event Feedback
-        </Text>
-
-        <Ionicons
-          name="chatbubble-ellipses-outline"
-          size={25}
-          color="#fff"
-        />
+        <View>
+          <Text style={styles.headerTitle}>Event Feedback</Text>
+          <Text style={styles.headerSubtitle}>
+            Share your experience
+          </Text>
+        </View>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        {/* Event Card */}
-        <View style={styles.eventCard}>
-          <View style={styles.eventIcon}>
-            <Ionicons
-              name="calendar"
-              size={32}
-              color="#2563EB"
-            />
-          </View>
+      {/* Event Card */}
+      <View style={styles.eventCard}>
+        <Ionicons name="calendar" size={32} style={styles.eventIcon} />
 
+        <View style={styles.eventInfo}>
           <Text style={styles.eventTitle}>
-            {event?.eventName || "Campus Event"}
+            {event?.eventName || "Event"}
+          </Text>
+
+          <Text style={styles.eventCategory}>
+            {event?.category || "General"}
           </Text>
 
           {event?.date && (
-            <Text style={styles.eventInfo}>
+            <Text style={styles.eventDate}>
               {event.date}
             </Text>
           )}
-
-          {event?.venue && (
-            <Text style={styles.eventInfo}>
-              {event.venue}
-            </Text>
-          )}
         </View>
+      </View>
 
-        {/* Rating */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            How was your experience?
-          </Text>
-
-          <Text style={styles.sectionSubtitle}>
-            Please rate this event from 1 to 5 stars.
-          </Text>
-
-          {renderStars()}
-
-          {rating > 0 && (
-            <Text style={styles.ratingText}>
-              {rating === 1 && "Poor"}
-              {rating === 2 && "Fair"}
-              {rating === 3 && "Good"}
-              {rating === 4 && "Very Good"}
-              {rating === 5 && "Excellent"}
-            </Text>
-          )}
-        </View>
-
-        {/* Feedback */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Your Feedback
-          </Text>
-
-          <TextInput
-            style={styles.textInput}
-            placeholder="Write your feedback here..."
-            placeholderTextColor="#94A3B8"
-            value={feedback}
-            onChangeText={(text) => {
-              setFeedback(text);
-              setSubmitted(false);
-            }}
-            multiline
-            numberOfLines={6}
-            textAlignVertical="top"
+      {/* Feedback Status */}
+      {submitted && (
+        <View style={styles.statusCard}>
+          <Ionicons
+            name="checkmark-circle"
+            size={24}
+            color="#2e7d32"
           />
 
-          <Text style={styles.characterCount}>
-            {feedback.length} characters
-          </Text>
-        </View>
+          <View style={styles.statusTextContainer}>
+            <Text style={styles.statusTitle}>
+              Feedback Submitted
+            </Text>
 
-        {/* Submitted Message */}
-        {submitted && (
-          <View style={styles.submittedCard}>
-            <Ionicons
-              name="checkmark-circle"
-              size={25}
-              color="#16A34A"
-            />
-
-            <View style={styles.submittedTextContainer}>
-              <Text style={styles.submittedTitle}>
-                Feedback Submitted
-              </Text>
-
-              <Text style={styles.submittedText}>
-                Your feedback has been saved successfully.
-              </Text>
-            </View>
+            <Text style={styles.statusText}>
+              You can edit your feedback below.
+            </Text>
           </View>
-        )}
+        </View>
+      )}
 
-        {/* Submit Button */}
+      {/* Rating */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>
+          How was your experience?
+        </Text>
+
+        <Text style={styles.sectionSubtitle}>
+          Select a rating from 1 to 5
+        </Text>
+
+        {renderStars()}
+
+        {rating > 0 && (
+          <Text style={styles.ratingText}>
+            {rating === 1 && "Very Poor"}
+            {rating === 2 && "Poor"}
+            {rating === 3 && "Average"}
+            {rating === 4 && "Good"}
+            {rating === 5 && "Excellent"}
+          </Text>
+        )}
+      </View>
+
+      {/* Feedback */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>
+          Your Feedback
+        </Text>
+
+        <Text style={styles.sectionSubtitle}>
+          Tell us about your experience
+        </Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Write your feedback here..."
+          placeholderTextColor="#888"
+          multiline
+          numberOfLines={6}
+          value={feedback}
+          onChangeText={setFeedback}
+          textAlignVertical="top"
+        />
+
+        <Text style={styles.characterCount}>
+          {feedback.length} characters
+        </Text>
+      </View>
+
+      {/* Buttons */}
+      <TouchableOpacity
+        style={styles.submitButton}
+        onPress={saveFeedback}
+      >
+        <Ionicons
+          name={submitted ? "create-outline" : "send-outline"}
+          size={20}
+          color="#fff"
+        />
+
+        <Text style={styles.submitText}>
+          {submitted ? "Update Feedback" : "Submit Feedback"}
+        </Text>
+      </TouchableOpacity>
+
+      {submitted && (
         <TouchableOpacity
-          style={styles.submitButton}
-          onPress={submitFeedback}
+          style={styles.deleteButton}
+          onPress={deleteFeedback}
         >
           <Ionicons
-            name="send-outline"
+            name="trash-outline"
             size={20}
-            color="#fff"
+            color="#d32f2f"
           />
 
-          <Text style={styles.submitText}>
-            {submitted ? "Update Feedback" : "Submit Feedback"}
+          <Text style={styles.deleteText}>
+            Delete Feedback
           </Text>
         </TouchableOpacity>
+      )}
 
-        <Text style={styles.note}>
-          Your feedback helps improve future campus events.
+      <TouchableOpacity
+        style={styles.summaryButton}
+        onPress={() => navigation.navigate("FeedbackSummary")}
+      >
+        <Ionicons
+          name="bar-chart-outline"
+          size={20}
+          style={styles.summaryIcon}
+        />
+
+        <Text style={styles.summaryText}>
+          View Feedback Summary
         </Text>
-      </ScrollView>
-    </View>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#f4f6f8",
+  },
+
+  content: {
+    paddingBottom: 40,
   },
 
   header: {
-    backgroundColor: "#2563EB",
-    paddingTop: 45,
-    paddingBottom: 18,
-    paddingHorizontal: 18,
+    backgroundColor: "#1976d2",
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+  },
+
+  backButton: {
+    marginRight: 15,
   },
 
   headerTitle: {
     color: "#fff",
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
   },
 
-  content: {
-    padding: 16,
-    paddingBottom: 40,
+  headerSubtitle: {
+    color: "#e3f2fd",
+    marginTop: 3,
+    fontSize: 13,
   },
 
   eventCard: {
     backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 20,
+    margin: 16,
+    padding: 18,
+    borderRadius: 14,
+    flexDirection: "row",
     alignItems: "center",
     elevation: 3,
-    marginBottom: 20,
   },
 
   eventIcon: {
-    backgroundColor: "#EFF6FF",
-    width: 65,
-    height: 65,
-    borderRadius: 35,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-
-  eventTitle: {
-    fontSize: 21,
-    fontWeight: "bold",
-    color: "#1E293B",
-    textAlign: "center",
+    marginRight: 15,
+    color: "#1976d2",
   },
 
   eventInfo: {
-    color: "#64748B",
-    marginTop: 5,
-    fontSize: 14,
+    flex: 1,
   },
 
-  section: {
+  eventTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#222",
+  },
+
+  eventCategory: {
+    marginTop: 5,
+    color: "#1976d2",
+    fontWeight: "600",
+  },
+
+  eventDate: {
+    marginTop: 4,
+    color: "#666",
+  },
+
+  statusCard: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: "#e8f5e9",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  statusTextContainer: {
+    marginLeft: 10,
+  },
+
+  statusTitle: {
+    fontWeight: "bold",
+    color: "#2e7d32",
+  },
+
+  statusText: {
+    color: "#555",
+    marginTop: 2,
+  },
+
+  card: {
     backgroundColor: "#fff",
-    borderRadius: 15,
+    marginHorizontal: 16,
+    marginBottom: 14,
     padding: 18,
-    marginBottom: 16,
+    borderRadius: 14,
     elevation: 2,
   },
 
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#1E293B",
+    color: "#222",
   },
 
   sectionSubtitle: {
-    color: "#64748B",
+    color: "#777",
     marginTop: 5,
-    marginBottom: 15,
   },
 
   starsContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 8,
+    marginTop: 18,
   },
 
   star: {
+    color: "#f5a623",
     marginHorizontal: 5,
   },
 
   ratingText: {
     textAlign: "center",
-    color: "#F59E0B",
-    fontWeight: "bold",
-    marginTop: 8,
+    marginTop: 10,
     fontSize: 16,
+    fontWeight: "bold",
+    color: "#1976d2",
   },
 
-  textInput: {
-    marginTop: 12,
+  input: {
+    marginTop: 15,
     borderWidth: 1,
-    borderColor: "#CBD5E1",
-    borderRadius: 12,
-    padding: 14,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    padding: 12,
     minHeight: 130,
     fontSize: 15,
-    color: "#1E293B",
-    backgroundColor: "#F8FAFC",
+    color: "#222",
+    backgroundColor: "#fafafa",
   },
 
   characterCount: {
     textAlign: "right",
-    color: "#94A3B8",
-    fontSize: 12,
     marginTop: 5,
-  },
-
-  submittedCard: {
-    backgroundColor: "#F0FDF4",
-    borderRadius: 12,
-    padding: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-
-  submittedTextContainer: {
-    marginLeft: 10,
-    flex: 1,
-  },
-
-  submittedTitle: {
-    color: "#15803D",
-    fontWeight: "bold",
-    fontSize: 15,
-  },
-
-  submittedText: {
-    color: "#166534",
-    marginTop: 3,
-    fontSize: 13,
+    color: "#888",
+    fontSize: 12,
   },
 
   submitButton: {
-    backgroundColor: "#2563EB",
+    marginHorizontal: 16,
+    backgroundColor: "#1976d2",
+    padding: 15,
     borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    justifyContent: "center",
     flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   submitText: {
@@ -440,10 +509,44 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  note: {
-    textAlign: "center",
-    color: "#64748B",
-    fontSize: 12,
+  deleteButton: {
+    marginHorizontal: 16,
     marginTop: 12,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#d32f2f",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  deleteText: {
+    color: "#d32f2f",
+    fontWeight: "bold",
+    marginLeft: 8,
+  },
+
+  summaryButton: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#1976d2",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  summaryIcon: {
+    color: "#1976d2",
+  },
+
+  summaryText: {
+    color: "#1976d2",
+    fontWeight: "bold",
+    marginLeft: 8,
   },
 });
