@@ -3,8 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
+  ScrollView,
   TouchableOpacity,
-  FlatList,
+  Alert,
+  RefreshControl,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,18 +16,26 @@ const FEEDBACK_KEY = "event_feedback";
 
 export default function FeedbackSummaryScreen({ navigation }) {
   const [feedbackList, setFeedbackList] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   const loadFeedback = async () => {
     try {
       const stored = await AsyncStorage.getItem(FEEDBACK_KEY);
 
       if (stored) {
-        setFeedbackList(JSON.parse(stored));
+        const data = JSON.parse(stored);
+
+        if (Array.isArray(data)) {
+          setFeedbackList(data);
+        } else {
+          setFeedbackList([]);
+        }
       } else {
         setFeedbackList([]);
       }
     } catch (error) {
       console.log("Error loading feedback:", error);
+      setFeedbackList([]);
     }
   };
 
@@ -35,469 +45,468 @@ export default function FeedbackSummaryScreen({ navigation }) {
     }, [])
   );
 
-  // Calculate average rating
-  const averageRating =
-    feedbackList.length > 0
-      ? (
-          feedbackList.reduce(
-            (total, item) => total + Number(item.rating),
-            0
-          ) / feedbackList.length
-        ).toFixed(1)
-      : "0.0";
-
-  // Count ratings
-  const ratingCounts = {
-    5: feedbackList.filter((item) => item.rating === 5).length,
-    4: feedbackList.filter((item) => item.rating === 4).length,
-    3: feedbackList.filter((item) => item.rating === 3).length,
-    2: feedbackList.filter((item) => item.rating === 2).length,
-    1: feedbackList.filter((item) => item.rating === 1).length,
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadFeedback();
+    setRefreshing(false);
   };
 
-  const renderStars = (rating) => {
+  const deleteFeedback = (feedbackId) => {
+    Alert.alert(
+      "Delete Feedback",
+      "Are you sure you want to delete this feedback?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const updatedList = feedbackList.filter(
+                (item) => item.id !== feedbackId
+              );
+
+              await AsyncStorage.setItem(
+                FEEDBACK_KEY,
+                JSON.stringify(updatedList)
+              );
+
+              setFeedbackList(updatedList);
+            } catch (error) {
+              console.log("Delete error:", error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const totalFeedback = feedbackList.length;
+
+  const totalRating = feedbackList.reduce(
+    (sum, item) => sum + Number(item.rating || 0),
+    0
+  );
+
+  const averageRating =
+    totalFeedback > 0
+      ? (totalRating / totalFeedback).toFixed(1)
+      : "0.0";
+
+  const getRatingCount = (rating) => {
+    return feedbackList.filter(
+      (item) => Number(item.rating) === rating
+    ).length;
+  };
+
+  const getPercentage = (rating) => {
+    if (totalFeedback === 0) {
+      return 0;
+    }
+
+    return (getRatingCount(rating) / totalFeedback) * 100;
+  };
+
+  const renderStars = (rating, size = 18) => {
     return (
-      <View style={styles.smallStars}>
+      <View style={styles.starRow}>
         {[1, 2, 3, 4, 5].map((star) => (
           <Ionicons
             key={star}
-            name={
-              star <= Number(rating)
-                ? "star"
-                : "star-outline"
-            }
-            size={17}
-            color="#F59E0B"
+            name={star <= rating ? "star" : "star-outline"}
+            size={size}
+            style={styles.star}
           />
         ))}
       </View>
     );
   };
 
-  const renderFeedback = ({ item }) => (
-    <View style={styles.feedbackCard}>
-      <View style={styles.feedbackHeader}>
-        <View style={styles.eventIcon}>
-          <Ionicons
-            name="calendar-outline"
-            size={23}
-            color="#2563EB"
-          />
-        </View>
-
-        <View style={styles.eventInfo}>
-          <Text style={styles.eventName}>
-            {item.eventName}
-          </Text>
-
-          <Text style={styles.feedbackDate}>
-            Submitted: {item.date}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.ratingRow}>
-        {renderStars(item.rating)}
-
-        <Text style={styles.ratingNumber}>
-          {item.rating}/5
-        </Text>
-      </View>
-
-      <View style={styles.commentBox}>
-        <Ionicons
-          name="chatbubble-outline"
-          size={18}
-          color="#64748B"
-        />
-
-        <Text style={styles.commentText}>
-          {item.feedback}
-        </Text>
-      </View>
-    </View>
-  );
-
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+        />
+      }
+    >
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
+          style={styles.backButton}
         >
-          <Ionicons
-            name="arrow-back"
-            size={26}
-            color="#fff"
-          />
+          <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>
-          Feedback Summary
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>
+            Feedback Summary
+          </Text>
+
+          <Text style={styles.headerSubtitle}>
+            Event feedback overview
+          </Text>
+        </View>
+
+        <TouchableOpacity onPress={handleRefresh}>
+          <Ionicons name="refresh" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Overall Rating */}
+      <View style={styles.overallCard}>
+        <Text style={styles.overallLabel}>
+          Overall Rating
         </Text>
 
-        <TouchableOpacity onPress={loadFeedback}>
-          <Ionicons
-            name="refresh-outline"
-            size={25}
-            color="#fff"
-          />
-        </TouchableOpacity>
+        <Text style={styles.averageRating}>
+          {averageRating}
+        </Text>
+
+        {renderStars(Number(averageRating), 25)}
+
+        <Text style={styles.totalText}>
+          Based on {totalFeedback} feedback
+          {totalFeedback !== 1 ? "s" : ""}
+        </Text>
       </View>
 
-      {/* Summary */}
-      <View style={styles.summaryCard}>
-        <View style={styles.averageSection}>
-          <Text style={styles.averageRating}>
-            {averageRating}
-          </Text>
+      {/* Rating Distribution */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>
+          Rating Distribution
+        </Text>
 
-          <View style={styles.averageStars}>
-            {[1, 2, 3, 4, 5].map((star) => (
+        {[5, 4, 3, 2, 1].map((rating) => {
+          const count = getRatingCount(rating);
+          const percentage = getPercentage(rating);
+
+          return (
+            <View
+              key={rating}
+              style={styles.distributionRow}
+            >
+              <Text style={styles.ratingNumber}>
+                {rating}
+              </Text>
+
               <Ionicons
-                key={star}
-                name={
-                  star <= Math.round(Number(averageRating))
-                    ? "star"
-                    : "star-outline"
-                }
-                size={20}
-                color="#F59E0B"
+                name="star"
+                size={16}
+                style={styles.smallStar}
               />
-            ))}
-          </View>
 
-          <Text style={styles.totalText}>
-            {feedbackList.length} feedback
-            {feedbackList.length !== 1 ? "s" : ""}
-          </Text>
-        </View>
-
-        <View style={styles.distribution}>
-          {[5, 4, 3, 2, 1].map((rating) => {
-            const count = ratingCounts[rating];
-
-            const percentage =
-              feedbackList.length > 0
-                ? (count / feedbackList.length) * 100
-                : 0;
-
-            return (
-              <View
-                key={rating}
-                style={styles.distributionRow}
-              >
-                <Text style={styles.ratingLabel}>
-                  {rating}
-                </Text>
-
-                <Ionicons
-                  name="star"
-                  size={14}
-                  color="#F59E0B"
+              <View style={styles.progressBackground}>
+                <View
+                  style={[
+                    styles.progressBar,
+                    {
+                      width: `${percentage}%`,
+                    },
+                  ]}
                 />
-
-                <View style={styles.progressBackground}>
-                  <View
-                    style={[
-                      styles.progressBar,
-                      {
-                        width: `${percentage}%`,
-                      },
-                    ]}
-                  />
-                </View>
-
-                <Text style={styles.countText}>
-                  {count}
-                </Text>
               </View>
-            );
-          })}
-        </View>
+
+              <Text style={styles.countText}>
+                {count}
+              </Text>
+            </View>
+          );
+        })}
       </View>
 
-      {/* Section Title */}
-      <View style={styles.sectionHeader}>
+      {/* Feedback List */}
+      <View style={styles.feedbackSection}>
         <Text style={styles.sectionTitle}>
           Submitted Feedback
         </Text>
 
-        <Text style={styles.resultCount}>
-          {feedbackList.length}
-        </Text>
-      </View>
+        {feedbackList.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Ionicons
+              name="chatbubble-ellipses-outline"
+              size={55}
+              color="#aaa"
+            />
 
-      {/* Feedback List */}
-      {feedbackList.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons
-            name="chatbubbles-outline"
-            size={70}
-            color="#CBD5E1"
-          />
-
-          <Text style={styles.emptyTitle}>
-            No Feedback Yet
-          </Text>
-
-          <Text style={styles.emptyText}>
-            Submit feedback for a registered event
-            to see it here.
-          </Text>
-
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backButtonText}>
-              Go Back
+            <Text style={styles.emptyTitle}>
+              No Feedback Yet
             </Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList
-          data={feedbackList}
-          keyExtractor={(item, index) =>
-            `${item.eventId}-${index}`
-          }
-          renderItem={renderFeedback}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.list}
-        />
-      )}
-    </View>
+
+            <Text style={styles.emptyText}>
+              Event feedback submitted by students
+              will appear here.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.browseButton}
+              onPress={() => navigation.navigate("Events")}
+            >
+              <Text style={styles.browseButtonText}>
+                Browse Events
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          feedbackList.map((item) => (
+            <View
+              key={item.id}
+              style={styles.feedbackCard}
+            >
+              <View style={styles.feedbackHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.eventName}>
+                    {item.eventName}
+                  </Text>
+
+                  <Text style={styles.category}>
+                    {item.category || "General"}
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  onPress={() =>
+                    deleteFeedback(item.id)
+                  }
+                >
+                  <Ionicons
+                    name="trash-outline"
+                    size={21}
+                    color="#d32f2f"
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {renderStars(Number(item.rating), 19)}
+
+              <Text style={styles.feedbackText}>
+                {item.feedback}
+              </Text>
+
+              <View style={styles.dateRow}>
+                <Ionicons
+                  name="time-outline"
+                  size={15}
+                  color="#777"
+                />
+
+                <Text style={styles.dateText}>
+                  {item.submittedAt || "Recently submitted"}
+                </Text>
+              </View>
+            </View>
+          ))
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#f4f6f8",
   },
 
   header: {
-    backgroundColor: "#2563EB",
-    paddingTop: 45,
-    paddingBottom: 18,
+    backgroundColor: "#1976d2",
+    paddingTop: 50,
+    paddingBottom: 20,
     paddingHorizontal: 18,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+  },
+
+  backButton: {
+    marginRight: 15,
   },
 
   headerTitle: {
     color: "#fff",
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: "bold",
   },
 
-  summaryCard: {
-    margin: 15,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 18,
-    elevation: 3,
-    flexDirection: "row",
+  headerSubtitle: {
+    color: "#e3f2fd",
+    marginTop: 3,
+    fontSize: 13,
   },
 
-  averageSection: {
-    width: "38%",
+  overallCard: {
+    backgroundColor: "#fff",
+    margin: 16,
+    padding: 25,
+    borderRadius: 16,
     alignItems: "center",
-    justifyContent: "center",
-    borderRightWidth: 1,
-    borderRightColor: "#E2E8F0",
-    paddingRight: 10,
+    elevation: 3,
+  },
+
+  overallLabel: {
+    color: "#666",
+    fontSize: 15,
   },
 
   averageRating: {
-    fontSize: 38,
+    fontSize: 45,
     fontWeight: "bold",
-    color: "#1E293B",
+    color: "#1976d2",
+    marginTop: 5,
   },
 
-  averageStars: {
+  starRow: {
     flexDirection: "row",
-    marginTop: 4,
+    marginTop: 5,
+  },
+
+  star: {
+    color: "#f5a623",
+    marginHorizontal: 2,
   },
 
   totalText: {
-    color: "#64748B",
-    fontSize: 12,
-    marginTop: 6,
+    marginTop: 10,
+    color: "#777",
   },
 
-  distribution: {
-    flex: 1,
-    paddingLeft: 15,
-    justifyContent: "center",
-  },
-
-  distributionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 3,
-  },
-
-  ratingLabel: {
-    width: 12,
-    color: "#475569",
-    fontSize: 12,
-  },
-
-  progressBackground: {
-    flex: 1,
-    height: 7,
-    backgroundColor: "#E2E8F0",
-    borderRadius: 10,
-    marginHorizontal: 7,
-    overflow: "hidden",
-  },
-
-  progressBar: {
-    height: 7,
-    backgroundColor: "#F59E0B",
-    borderRadius: 10,
-  },
-
-  countText: {
-    width: 18,
-    fontSize: 12,
-    color: "#64748B",
-    textAlign: "right",
-  },
-
-  sectionHeader: {
-    paddingHorizontal: 15,
-    marginTop: 5,
-    marginBottom: 8,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  card: {
+    backgroundColor: "#fff",
+    marginHorizontal: 16,
+    padding: 18,
+    borderRadius: 14,
+    elevation: 2,
   },
 
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#1E293B",
+    color: "#222",
+    marginBottom: 15,
   },
 
-  resultCount: {
-    backgroundColor: "#DBEAFE",
-    color: "#2563EB",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+  distributionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 7,
+  },
+
+  ratingNumber: {
+    width: 18,
     fontWeight: "bold",
+    color: "#444",
   },
 
-  list: {
-    paddingHorizontal: 15,
-    paddingBottom: 30,
+  smallStar: {
+    color: "#f5a623",
+    marginHorizontal: 5,
+  },
+
+  progressBackground: {
+    flex: 1,
+    height: 9,
+    backgroundColor: "#e0e0e0",
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+
+  progressBar: {
+    height: "100%",
+    backgroundColor: "#1976d2",
+    borderRadius: 10,
+  },
+
+  countText: {
+    width: 30,
+    textAlign: "right",
+    color: "#555",
+  },
+
+  feedbackSection: {
+    margin: 16,
   },
 
   feedbackCard: {
     backgroundColor: "#fff",
-    borderRadius: 15,
     padding: 16,
     marginBottom: 12,
+    borderRadius: 14,
     elevation: 2,
   },
 
   feedbackHeader: {
     flexDirection: "row",
     alignItems: "center",
-  },
-
-  eventIcon: {
-    width: 45,
-    height: 45,
-    borderRadius: 12,
-    backgroundColor: "#EFF6FF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  eventInfo: {
-    flex: 1,
-    marginLeft: 10,
+    marginBottom: 8,
   },
 
   eventName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "bold",
-    color: "#1E293B",
+    color: "#222",
   },
 
-  feedbackDate: {
-    fontSize: 12,
-    color: "#64748B",
-    marginTop: 4,
+  category: {
+    marginTop: 3,
+    color: "#1976d2",
+    fontSize: 13,
   },
 
-  ratingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 13,
-  },
-
-  smallStars: {
-    flexDirection: "row",
-  },
-
-  ratingNumber: {
-    marginLeft: 8,
-    color: "#D97706",
-    fontWeight: "bold",
-  },
-
-  commentBox: {
-    backgroundColor: "#F8FAFC",
-    borderRadius: 10,
-    padding: 12,
+  feedbackText: {
     marginTop: 12,
+    color: "#444",
+    fontSize: 15,
+    lineHeight: 22,
+  },
+
+  dateRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
-  },
-
-  commentText: {
-    flex: 1,
-    marginLeft: 8,
-    color: "#475569",
-    lineHeight: 20,
-    fontSize: 14,
-  },
-
-  emptyContainer: {
-    flex: 1,
     alignItems: "center",
-    justifyContent: "center",
+    marginTop: 12,
+  },
+
+  dateText: {
+    color: "#777",
+    fontSize: 12,
+    marginLeft: 5,
+  },
+
+  emptyCard: {
+    backgroundColor: "#fff",
     padding: 30,
+    borderRadius: 14,
+    alignItems: "center",
+    elevation: 2,
   },
 
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: "bold",
-    color: "#334155",
-    marginTop: 15,
+    marginTop: 12,
+    color: "#333",
   },
 
   emptyText: {
     textAlign: "center",
-    color: "#64748B",
+    color: "#777",
     marginTop: 8,
-    lineHeight: 21,
+    lineHeight: 20,
   },
 
-  backButton: {
-    marginTop: 18,
-    backgroundColor: "#2563EB",
-    paddingHorizontal: 25,
+  browseButton: {
+    backgroundColor: "#1976d2",
+    paddingHorizontal: 22,
     paddingVertical: 12,
     borderRadius: 10,
+    marginTop: 18,
   },
 
-  backButtonText: {
+  browseButtonText: {
     color: "#fff",
     fontWeight: "bold",
   },
